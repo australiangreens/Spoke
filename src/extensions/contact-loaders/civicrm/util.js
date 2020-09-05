@@ -87,6 +87,11 @@ export async function getGroupMembers(groupId, limit) {
       options: { limit: PAGE_SIZE },
       phone: { "IS NOT NULL": 1 },
       return: ["id", "phone", "first_name", "last_name", "postal_code"],
+      // filter out people who probably don't want to be contacted
+      do_not_sms: { "=": 0 },
+      contact_is_deleted: { "=": 0 },
+      is_deceased: { "=": 0 },
+      is_opt_out: { "=": 0 },
 
       // Closest thing to docs for this: https://lab.civicrm.org/dev/core/blob/d434a5cfb2dc3c248ac3c0d8570bd8e9d828f6ad/api/v3/Contact.php#L403
       "filter.group_id": parseInt(groupId)
