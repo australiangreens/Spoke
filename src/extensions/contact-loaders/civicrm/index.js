@@ -124,12 +124,7 @@ export async function processContactLoad(job, maxContacts, organization) {
     last_name: res.last_name,
     cell: res.phone,
     zip: res.postal_code,
-    custom_fields: JSON.stringify(
-      _.zipObject(
-        CUSTOM_DATA,
-        CUSTOM_DATA.map(key => res[key])
-      )
-    ),
+    custom_fields: JSON.stringify(_.pick(res, CUSTOM_DATA)),
     message_status: "needsMessage",
     campaign_id: campaignId
   }));
