@@ -115,35 +115,35 @@ export async function processContactLoad(job, maxContacts, organization) {
 
   const contactData = JSON.parse(job.payload);
   console.log("contactData: " + JSON.stringify(contactData));
-  const results = await getGroupMembers(contactData.groupId);
 
-  console.log(results.length, "results");
+  const finalCount = await getGroupMembers(
+    contactData.groupId,
+    undefined,
+    async results => {
+      const newContacts = results.map(res => ({
+        first_name: res.first_name,
+        last_name: res.last_name,
+        cell: res.phone,
+        zip: res.postal_code,
+        custom_fields: JSON.stringify(_.pick(res, CUSTOM_DATA)),
+        message_status: "needsMessage",
+        campaign_id: campaignId
+      }));
+      console.log("loading", newContacts.length, "contacts");
 
-  const newContacts = results.map(res => ({
-    first_name: res.first_name,
-    last_name: res.last_name,
-    cell: res.phone,
-    zip: res.postal_code,
-    custom_fields: JSON.stringify(_.pick(res, CUSTOM_DATA)),
-    message_status: "needsMessage",
-    campaign_id: campaignId
-  }));
-
-  console.log("first", newContacts[0]);
-  console.log("last", newContacts[newContacts.length - 1]);
-  if (newContacts.length) {
-    await r.knex.batchInsert(
-      "campaign_contact",
-      newContacts,
-      newContacts.length
-    );
-  }
+      await r.knex.batchInsert(
+        "campaign_contact",
+        newContacts,
+        newContacts.length
+      );
+    }
+  );
 
   await completeContactLoad(
     job,
     null,
     // see failedContactLoad above for descriptions
-    String(contactData.requestContactCount),
-    JSON.stringify({ finalCount: newContacts.length })
+    String(contactData.groupId),
+    JSON.stringify({ finalCount })
   );
 }
