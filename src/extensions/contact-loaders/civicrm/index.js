@@ -1,7 +1,8 @@
 import { completeContactLoad, failedContactLoad } from "../../../workers/jobs";
 import { r } from "../../../server/models";
 import { getConfig, hasConfig } from "../../../server/api/lib/config";
-import { searchGroups, getGroupMembers } from "./util";
+import { searchGroups, getGroupMembers, CUSTOM_DATA } from "./util";
+import _ from "lodash";
 
 export const name = "civicrm";
 
@@ -123,7 +124,12 @@ export async function processContactLoad(job, maxContacts, organization) {
     last_name: res.last_name,
     cell: res.phone,
     zip: res.postal_code,
-    custom_fields: JSON.stringify({}),
+    custom_fields: JSON.stringify(
+      _.zipObject(
+        CUSTOM_DATA,
+        CUSTOM_DATA.map(key => res[key])
+      )
+    ),
     message_status: "needsMessage",
     campaign_id: campaignId
   }));
