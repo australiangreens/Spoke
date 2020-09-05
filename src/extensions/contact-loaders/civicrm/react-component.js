@@ -9,7 +9,7 @@ import LoadingIndicator from "../../../components/LoadingIndicator";
 
 export class CampaignContactsForm extends React.Component {
   state = {
-    errorResult: null,
+    error: null,
     list: null,
     result: [],
     loading: false
@@ -30,7 +30,7 @@ export class CampaignContactsForm extends React.Component {
         if (res.error) {
           this.setError(res.error);
         } else {
-          this.setState({ result: res.groups, loading: false });
+          this.setState({ result: res.groups, loading: false, error: null });
         }
       })
       .catch(error => {
@@ -40,10 +40,7 @@ export class CampaignContactsForm extends React.Component {
   }
 
   setError(error) {
-    this.setState({
-      loading: false,
-      lastResult: { result: JSON.stringify({ message: error.toString() }) }
-    });
+    this.setState({ loading: false, error });
   }
 
   render() {
@@ -53,6 +50,8 @@ export class CampaignContactsForm extends React.Component {
     if (lastResult && lastResult.result) {
       const { message, finalCount } = JSON.parse(lastResult.result);
       resultMessage = message ? message : `Loaded ${finalCount} contacts`;
+    } else if (this.state.error) {
+      resultMessage = "Error: " + JSON.stringify(this.state.error);
     }
 
     return (
