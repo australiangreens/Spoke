@@ -106,12 +106,12 @@ export async function getGroupMembers(groupId, limit) {
         "last_name",
         "postal_code",
 
-        //additional data
+        // additional data
         ...CUSTOM_DATA
       ],
 
       // Closest thing to docs for this: https://lab.civicrm.org/dev/core/blob/d434a5cfb2dc3c248ac3c0d8570bd8e9d828f6ad/api/v3/Contact.php#L403
-      "filter.group_id": parseInt(groupId)
+      group: groupId
     },
     limit
   );
