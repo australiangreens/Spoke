@@ -44,9 +44,7 @@ function promisify(func) {
   };
 }
 
-async function paginate(get, entity, options, limit, callback) {
-  limit = limit || Infinity;
-
+async function paginate(get, entity, options, callback) {
   let count = 0;
 
   while (true) {
@@ -57,9 +55,6 @@ async function paginate(get, entity, options, limit, callback) {
     await callback(once);
 
     count += once.length;
-    if (count > limit) {
-      return count;
-    }
 
     options.options = options.options || {};
 
@@ -84,7 +79,7 @@ export async function searchGroups(query) {
   });
 }
 
-export async function getGroupMembers(groupId, limit, callback) {
+export async function getGroupMembers(groupId, callback) {
   const get = getCivi();
 
   return await paginate(
@@ -116,7 +111,6 @@ export async function getGroupMembers(groupId, limit, callback) {
       // Closest thing to docs for this: https://lab.civicrm.org/dev/core/blob/d434a5cfb2dc3c248ac3c0d8570bd8e9d828f6ad/api/v3/Contact.php#L403
       group: groupId
     },
-    limit,
     callback
   );
 }
