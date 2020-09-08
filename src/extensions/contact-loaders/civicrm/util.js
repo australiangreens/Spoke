@@ -27,9 +27,7 @@ function getCivi() {
 }
 
 function promisify(func) {
-  return async function() {
-    const args = Array.prototype.slice.call(arguments);
-
+  return async function(...args) {
     return new Promise((resolve, reject) => {
       args.push(result => {
         if (result.is_error) {
