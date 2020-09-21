@@ -60,6 +60,10 @@ async function paginate(get, entity, options, callback) {
   }
 }
 
+/**
+ * @param {string} query
+ * @returns {Promise<{ title: string; count: number; id: number }[]>}
+ */
 export async function searchGroups(query) {
   const get = getCivi();
   const key = "api.GroupContact.getcount";
@@ -70,11 +74,11 @@ export async function searchGroups(query) {
     [key]: 1
   });
 
-  return res.map(group => {
-    group.title += ` (${group[key]})`;
-    delete group[key];
-    return group;
-  });
+  return res.map(group => ({
+    title: group.title + ` (${group[key]})`,
+    count: group[key],
+    id: group.id
+  }));
 }
 
 export async function getGroupMembers(groupId, callback) {
