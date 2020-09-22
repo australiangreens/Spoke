@@ -1,3 +1,7 @@
+import ActionDelete from "material-ui/svg-icons/action/delete";
+import Subheader from "material-ui/Subheader";
+import Avatar from "material-ui/Avatar";
+import FileFolder from "material-ui/svg-icons/file/folder";
 import type from "prop-types";
 import React from "react";
 import GSForm from "../../../components/forms/GSForm";
@@ -6,13 +10,16 @@ import { ListItem, List } from "material-ui/List";
 import yup from "yup";
 import AutoComplete from "material-ui/AutoComplete";
 import LoadingIndicator from "../../../components/LoadingIndicator";
+import * as _ from "lodash";
+import Paper from "material-ui/Paper";
 
-export class CampaignContactsForm extends React.Component {
+class MultiAutoCompleteSelect extends React.Component {
   state = {
     error: null,
     list: null,
-    result: [],
-    loading: false
+    value: [],
+    searchText: "",
+    result: []
   };
 
   refreshList(query) {
@@ -43,6 +50,83 @@ export class CampaignContactsForm extends React.Component {
     this.setState({ loading: false, error });
   }
 
+  componentWillReceiveProps(props) {
+    this.setState({ value: props.value });
+  }
+
+  remove(id) {
+    this.setState(old => ({
+      value: _.remove(old.value, item => item.id === id)
+    }));
+  }
+
+  render() {
+    const self = this;
+
+    console.log(this.props);
+    return (
+      <div style={{ display: "flex" }}>
+        <Paper zDepth={2} style={{ flexBasis: "50%" }}>
+          <div style={{ padding: "5px" }}>
+            <div style={{ display: "flex" }}>
+              <List style={{ flexBasis: "33.33%" }}>
+                <Subheader inset={true}>Selected groups</Subheader>
+                {(this.props.value || []).map(value => (
+                  <ListItem
+                    leftAvatar={<Avatar icon={<FileFolder />} />}
+                    rightIcon={
+                      <ActionDelete
+                        onClick={this.remove.bind(this, value.id)}
+                      />
+                    }
+                    key={value.id}
+                    primaryText={value.title}
+                  />
+                ))}
+              </List>
+            </div>
+
+            <div style={{ display: "flex" }}>
+              <AutoComplete
+                style={{ flexBasis: "33.33%" }}
+                label="CiviCRM list"
+                name="groupId"
+                as="select"
+                searchText={this.state.searchText}
+                filter={AutoComplete.noFilter}
+                dataSource={this.state.result}
+                onNewRequest={function(el) {
+                  self.setState(old => {
+                    const newValue = old.value.concat([el]);
+                    self.props.onChange(newValue);
+                    return { value: newValue, searchText: "" };
+                  });
+                }}
+                onUpdateInput={text => {
+                  this.refreshList(text);
+                  this.setState({ searchText: text });
+                }}
+                dataSourceConfig={{
+                  text: "title",
+                  value: "id"
+                }}
+                hintText="Choose CiviCRM list"
+              />
+              {this.state.loading && <LoadingIndicator />}
+            </div>
+          </div>
+        </Paper>
+      </div>
+    );
+  }
+}
+
+export class CampaignContactsForm extends React.Component {
+  state = {
+    error: null,
+    result: []
+  };
+
   render() {
     const { lastResult } = this.props,
       props = this.props;
@@ -57,8 +141,19 @@ export class CampaignContactsForm extends React.Component {
     return (
       <GSForm
         schema={yup.object({
-          groupId: yup.string().required()
+          groupIds: yup
+            .array()
+            .of(
+              yup
+                .object()
+                .shape({
+                  count: yup.number(),
+                  id: yup.number(),
+                  title: yup.string()
+                })
+            )
         })}
+        initialValues={{ groupIds: [] }}
         onChange={formValues => {
           this.setState({ ...formValues });
           props.onChange(JSON.stringify(formValues));
@@ -72,25 +167,7 @@ export class CampaignContactsForm extends React.Component {
           props.onSubmit();
         }}
       >
-        <Form.Field
-          label="CiviCRM list"
-          name="groupId"
-          as="select"
-          type={AutoComplete}
-          fullWidth
-          filter={AutoComplete.noFilter}
-          dataSource={this.state.result}
-          onNewRequest={function(el) {
-            this.onChange(el.id);
-          }}
-          dataSourceConfig={{
-            text: "title",
-            value: "id"
-          }}
-          hintText="Choose CiviCRM list"
-          onUpdateInput={this.refreshList.bind(this)}
-        />
-        {this.state.loading && <LoadingIndicator />}
+        <Form.Field name="groupIds" type={MultiAutoCompleteSelect}></Form.Field>
 
         <List>
           {resultMessage ? (

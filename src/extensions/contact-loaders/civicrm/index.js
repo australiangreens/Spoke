@@ -116,10 +116,11 @@ export async function processContactLoad(job, maxContacts, organization) {
   const contactData = JSON.parse(job.payload);
   console.log("contactData: " + JSON.stringify(contactData));
 
-  const finalCount = await getGroupMembers(
-    contactData.groupId,
-    undefined,
-    async results => {
+  const totalExpected = _.sum(_.map(contactData.groupIds, "count"));
+
+  let finalCount = 0;
+  for (const group of contactData.groupIds) {
+    finalCount += await getGroupMembers(group.id, async results => {
       const newContacts = results.map(res => ({
         first_name: res.first_name,
         last_name: res.last_name,
@@ -137,8 +138,8 @@ export async function processContactLoad(job, maxContacts, organization) {
         newContacts,
         newContacts.length
       );
-    }
-  );
+    });
+  }
 
   await completeContactLoad(
     job,
