@@ -23,7 +23,10 @@ function getCivi() {
 
   const crmAPI = civicrm(config);
 
-  return promisify(crmAPI.get.bind(crmAPI));
+  return {
+    get: promisify(crmAPI.get.bind(crmAPI)),
+    create: promisify(crmAPI.create.bind(crmAPI))
+  };
 }
 
 function promisify(func) {
@@ -65,7 +68,7 @@ async function paginate(get, entity, options, callback) {
  * @returns {Promise<{ title: string; count: number; id: number }[]>}
  */
 export async function searchGroups(query) {
-  const get = getCivi();
+  const { get } = getCivi();
   const key = "api.GroupContact.getcount";
 
   const res = await get("group", {
@@ -82,7 +85,7 @@ export async function searchGroups(query) {
 }
 
 export async function getGroupMembers(groupId, callback) {
-  const get = getCivi();
+  const { get } = getCivi();
 
   return await paginate(
     get,
