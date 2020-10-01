@@ -3,6 +3,7 @@ import { r } from "../../../server/models";
 import { getConfig, hasConfig } from "../../../server/api/lib/config";
 import { searchGroups, getGroupMembers, CUSTOM_DATA } from "./util";
 import _ from "lodash";
+import { getFormattedPhoneNumber } from "../../../lib";
 
 export const name = "civicrm";
 
@@ -124,7 +125,10 @@ export async function processContactLoad(job, maxContacts, organization) {
       const newContacts = results.map(res => ({
         first_name: res.first_name,
         last_name: res.last_name,
-        cell: res.phone,
+        cell: getFormattedPhoneNumber(
+          res.phone,
+          getConfig("PHONE_NUMBER_COUNTRY")
+        ),
         zip: res.postal_code,
         external_id: res.id,
         custom_fields: JSON.stringify(_.pick(res, CUSTOM_DATA)),
