@@ -1,7 +1,7 @@
 import civicrm from "civicrm";
 import { parse } from "url";
 import { r } from "../../server/models";
-import { getConfig } from "../../../server/api/lib/config";
+import { getConfig } from "../../server/api/lib/config";
 
 export const name = "civicrm-do-not-sms";
 
@@ -11,14 +11,14 @@ export const displayName = () => "Set Do Not SMS in CiviCRM";
 // The Help text for the user after selecting the action
 export const instructions = () =>
   `
-  Use this action to set "Do Not SMS" on a person's CiviCRM record.
+  Use this action to set "Do Not SMS" on the related CiviCRM record.
   `;
 
 export function serverAdministratorInstructions() {
   return {
     description: `
-      This action sets "Do Not SMS" on a person's CiviCRM record.
-      Only works if a campaign's contacts are loaded directly from CiviCRM.
+      This action sets "Do Not SMS" on a CiviCRM record.
+      Only works if the contacts for the campaign were loaded directly from CiviCRM.
       `,
     setupInstructions:
       "Add `civicrm-do-not-sms` to the environment variable `ACTION_HANDLERS`, and ensure CiviCRM contact loader is enabled",
@@ -104,14 +104,15 @@ export async function processAction({
   const { create } = getCivi();
   const res = await create("contact", {
     id: { "=": customFields["external_id"] },
-    do_not_sms: { "=": 1 },
+    do_not_sms: { "=": 1 }
   });
- 
+
   if (res.is_error) {
     console.error("error: could not set do_not_sms in CiviCRM");
-  }
-  else {
-    console.info("success: Do Not SMS set in CiviCRM for contact ID " + customField["external_id"]); 
+  } else {
+    console.info(
+      "success: Do Not SMS set in CiviCRM for contact ID " +
+        customField["external_id"]
+    );
   }
 }
-
