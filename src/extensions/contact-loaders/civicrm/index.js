@@ -5,6 +5,8 @@ import { searchGroups, getGroupMembers, CUSTOM_DATA } from "./util";
 import _ from "lodash";
 import { getFormattedPhoneNumber } from "../../../lib";
 
+const crmSource = { crmSource: "civicrm" };
+
 export const name = "civicrm";
 
 export function displayName() {
@@ -131,7 +133,9 @@ export async function processContactLoad(job, maxContacts, organization) {
         ),
         zip: res.postal_code,
         external_id: res.id,
-        custom_fields: JSON.stringify(_.pick(res, CUSTOM_DATA)),
+        custom_fields: JSON.stringify(
+          _.merge(crmSource, _.pick(res, CUSTOM_DATA))
+        ),
         message_status: "needsMessage",
         campaign_id: campaignId
       }));
