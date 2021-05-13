@@ -1,6 +1,5 @@
 import civicrm from "civicrm";
 import { parse } from "url";
-import { r } from "../../server/models";
 import { getConfig } from "../../server/api/lib/config";
 
 export const name = "civicrm-do-not-sms";
@@ -83,7 +82,6 @@ export async function available(organizationId) {
 // What happens when a texter saves the answer that triggers the action
 // This is presumably the meat of the action
 export async function processAction({
-  campaignContactId,
   contact
   // campaign,    // unused parameter
   // organization // unused parameter
@@ -91,28 +89,18 @@ export async function processAction({
   // This is a meta action that updates a variable in the contact record itself.
   // Generally, you want to send action data to the outside world, so you
   // might want the request library loaded above
-  const customFields = JSON.parse(contact.custom_fields || "{}");
-  if (customFields) {
-    customFields["processed_test_action"] = "completed";
-  }
-
-  await r
-    .knex("campaign_contact")
-    .where("campaign_contact.id", campaignContactId)
-    .update("custom_fields", JSON.stringify(customFields));
 
   const { create } = getCivi();
   const res = await create("contact", {
-    id: { "=": customFields["external_id"] },
-    do_not_sms: { "=": 1 }
+    id: contact.external_id,
+    do_not_sms: 1
   });
 
   if (res.is_error) {
     console.error("error: could not set do_not_sms in CiviCRM");
   } else {
     console.info(
-      "success: Do Not SMS set in CiviCRM for contact ID " +
-        customField["external_id"]
+      "success: Do Not SMS set in CiviCRM for contact ID " + contact.external_id
     );
   }
 }

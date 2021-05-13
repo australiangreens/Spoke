@@ -12,19 +12,24 @@ export const showSidebox = ({ contact, settingsData }) =>
 export class TexterSidebox extends React.Component {
   render() {
     const { campaign, assignment, contact, settingsData } = this.props;
-    const url =
+    const rocketUrl =
       settingsData.rocketUrl + "/agc/ems8#!/contact/" + contact.external_id;
 
     return (
       <div style={{ textAlign: "center" }}>
-        <h2>CiviCRM/Rocket Actions</h2>
+        <h2>Spoke Top Tips</h2>
+        <ul style={{ textAlign: "left" }}>
+          <li>Opt-out here doesn't change a person's record in Civi </li>
+          <li>Be polite &amp; personable; it can make someone's day!</li>
+          <li>Be mindful of the time when sending messages</li>
+        </ul>
         <div>
           <RaisedButton
-            label="Open record in Rocket"
+            label={"View " + contact.firstName + " in Rocket"}
             onClick={() => {
-              window.open(url, "_blank");
+              window.open(rocketUrl, "_blank");
             }}
-            primary={true}
+            primary
           />
         </div>
       </div>
