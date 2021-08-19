@@ -199,7 +199,7 @@
     "selenium-webdriver": "^3.6.0",
     "sqlite3": "^4.1.1",
     "wait-on": "^2.1.0",
-    "webpack-dev-server": "^2.9.4"
+    "webpack-dev-server": "^4.0.0"
   },
   "husky": {
     "hooks": {
