@@ -24,7 +24,8 @@ const max = parseInt(DB_MAX_POOL, 10);
 const pg = require("pg");
 const { parse: pgDbUrlParser } = require("pg-connection-string");
 
-const useSSL = DB_USE_SSL === "1" || DB_USE_SSL.toLowerCase() === "true";
+// const useSSL = DB_USE_SSL === "1" || DB_USE_SSL.toLowerCase() === "true";
+const useSSL = false;
 if (useSSL) pg.defaults.ssl = true;
 // see https://github.com/tgriesser/knex/issues/852
 
