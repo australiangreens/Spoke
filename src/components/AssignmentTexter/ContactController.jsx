@@ -4,10 +4,9 @@ import React from "react";
 import LoadingIndicator from "../LoadingIndicator";
 import { StyleSheet, css } from "aphrodite";
 import { withRouter } from "react-router";
-import Check from "material-ui/svg-icons/action/check-circle";
 import Empty from "../Empty";
-import RaisedButton from "material-ui/RaisedButton";
-import Dialog from "material-ui/Dialog";
+import Button from "@material-ui/core/Button";
+import CheckCircleIcon from "@material-ui/icons/CheckCircle";
 import {
   getSideboxes,
   renderSidebox
@@ -284,6 +283,8 @@ export class ContactController extends React.Component {
       this.setState({ finishedContactId: contactId }, () => {
         if (!this.props.reviewContactId) {
           this.props.refreshData();
+          this.clearContactIdOldData(contactId);
+          this.updateCurrentContactIndex(this.state.currentContactIndex);
         }
       });
     }
@@ -390,7 +391,6 @@ export class ContactController extends React.Component {
       );
       setTimeout(() => {
         if (self.state.contactCache[contact.id]) {
-          console.log("got the data", contact.id);
           // reset delay back to baseline
           self.setState({ reloadDelay: 200 });
           self.forceUpdate();
@@ -433,6 +433,8 @@ export class ContactController extends React.Component {
       <ChildComponent
         key={contact.id}
         assignment={assignment}
+        handleNavigateNext={this.handleNavigateNext}
+        handleNavigatePrevious={this.handleNavigatePrevious}
         currentUser={this.props.currentUser}
         campaignContactId={contact.id}
         reviewContactId={this.props.reviewContactId}
@@ -445,6 +447,8 @@ export class ContactController extends React.Component {
         refreshData={this.props.refreshData}
         onExitTexter={this.handleExitTexter}
         messageStatusFilter={this.props.messageStatusFilter}
+        organizationId={this.props.organizationId}
+        location={this.props.location}
       />
     );
   }
@@ -469,12 +473,11 @@ export class ContactController extends React.Component {
       <div key="empty">
         <Empty
           title={emptyMessage}
-          icon={<Check />}
+          icon={<CheckCircleIcon />}
           content={
-            <RaisedButton
-              label="Back To Todos"
-              onClick={this.handleExitTexter}
-            />
+            <Button variant="contained" onClick={this.handleExitTexter}>
+              Back To Todos
+            </Button>
           }
         />
         {sideboxList}
@@ -505,6 +508,7 @@ export class ContactController extends React.Component {
         campaign.texterUIConfig.options) ||
         "{}"
     );
+    const review = this.props.location.query.review;
     const sideboxProps = {
       assignment,
       campaign,
@@ -515,7 +519,8 @@ export class ContactController extends React.Component {
       messageStatusFilter,
       finished,
       loading,
-      settingsData
+      settingsData,
+      review
     };
     const enabledSideboxes = getSideboxes(sideboxProps, "TexterTodo");
     return (
@@ -540,7 +545,8 @@ ContactController.propTypes = {
   loadContacts: PropTypes.func,
   organizationId: PropTypes.string,
   ChildComponent: PropTypes.func,
-  messageStatusFilter: PropTypes.string
+  messageStatusFilter: PropTypes.string,
+  location: PropTypes.object
 };
 
 export default withRouter(ContactController);

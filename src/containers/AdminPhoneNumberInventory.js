@@ -1,19 +1,34 @@
 import PropTypes from "prop-types";
 import React from "react";
 import gql from "graphql-tag";
-
-import ContentAdd from "material-ui/svg-icons/content/add";
-import DataTables from "material-ui-datatables";
-import Dialog from "material-ui/Dialog";
-import FloatingActionButton from "material-ui/FloatingActionButton";
-import yup from "yup";
-import GSForm from "../components/forms/GSForm";
+import * as yup from "yup";
 import Form from "react-formal";
 
+import MUIDataTable from "mui-datatables";
+import CircularProgress from "@material-ui/core/CircularProgress";
+import AddIcon from "@material-ui/icons/Add";
+import DeleteIcon from "@material-ui/icons/Delete";
+import Fab from "@material-ui/core/Fab";
+import Button from "@material-ui/core/Button";
+import IconButton from "@material-ui/core/IconButton";
+import Dialog from "@material-ui/core/Dialog";
+import DialogTitle from "@material-ui/core/DialogTitle";
+import DialogActions from "@material-ui/core/DialogActions";
+import DialogContent from "@material-ui/core/DialogContent";
+import Paper from "@material-ui/core/Paper";
+import FormControlLabel from "@material-ui/core/FormControlLabel";
+import Switch from "@material-ui/core/Switch";
+import MenuItem from "@material-ui/core/MenuItem";
+import Select from "@material-ui/core/Select";
+import FormControl from "@material-ui/core/FormControl";
+import InputLabel from "@material-ui/core/InputLabel";
+
+import GSForm from "../components/forms/GSForm";
+import GSSubmitButton from "../components/forms/GSSubmitButton";
+import GSTextField from "../components/forms/GSTextField";
 import theme from "../styles/theme";
 import { dataTest } from "../lib/attributes";
 import loadData from "./hoc/load-data";
-import { CircularProgress, FlatButton, Toggle } from "material-ui";
 
 const inlineStyles = {
   column: {
@@ -39,6 +54,7 @@ const inlineStyles = {
 class AdminPhoneNumberInventory extends React.Component {
   static propTypes = {
     data: PropTypes.object,
+    params: PropTypes.object,
     mutations: PropTypes.object
   };
 
@@ -50,8 +66,10 @@ class AdminPhoneNumberInventory extends React.Component {
       buyNumbersFormValues: {
         addToOrganizationMessagingService: false
       },
-      sortCol: 'areaCode',
-      sortOrder: 'asc'
+      sortCol: "state",
+      sortOrder: "asc",
+      filters: {},
+      deleteNumbersDialogOpen: false
     };
   }
 
@@ -70,6 +88,12 @@ class AdminPhoneNumberInventory extends React.Component {
       addToOrganizationMessagingService: yup.bool()
     });
   }
+
+  handleStateFilterChange = e => {
+    this.setState(({ filters }) => ({
+      filters: { ...filters, state: e.target.value }
+    }));
+  };
 
   handleBuyNumbersOpen = () => {
     this.setState({
@@ -103,6 +127,7 @@ class AdminPhoneNumberInventory extends React.Component {
       limit,
       addToOrganizationMessagingService
     );
+
     this.setState({
       buyNumbersDialogOpen: false,
       buyNumbersFormValues: {
@@ -113,40 +138,85 @@ class AdminPhoneNumberInventory extends React.Component {
     });
   };
 
+  handleDeleteNumbersOpen = ([areaCode, , , availableCount]) => {
+    this.setState({
+      deleteNumbersDialogOpen: true,
+      deleteNumbersAreaCode: areaCode,
+      deleteNumbersCount: availableCount
+    });
+  };
+
+  handleDeleteNumbersCancel = () => {
+    this.setState({
+      deleteNumbersDialogOpen: false,
+      deleteNumbersAreaCode: null,
+      deleteNumbersCount: 0
+    });
+  };
+
+  handleDeletePhoneNumbersSubmit = async () => {
+    await this.props.mutations.deletePhoneNumbers(
+      this.state.deleteNumbersAreaCode
+    );
+    this.setState({
+      deleteNumbersDialogOpen: false,
+      deleteNumbersAreaCode: null
+    });
+  };
+
   tableColumns() {
     const { pendingPhoneNumberJobs } = this.props.data.organization;
     return [
       {
-        key: "areaCode",
-        label: "Area Code",
-        style: inlineStyles.column,
-        sortable: true
+        name: "areaCode",
+        label: "Area Code"
       },
       {
-        key: "state",
-        label: "State",
-        style: inlineStyles.column,
-        sortable: true
+        name: "state",
+        label: "State"
       },
       {
-        key: "allocatedCount",
+        name: "allocatedCount",
         label: "Allocated",
-        style: inlineStyles.column
+        options: {
+          sort: false
+        }
       },
       {
-        key: "availableCount",
+        name: "availableCount",
         label: "Available",
-        style: inlineStyles.column
+        options: {
+          sort: false
+        }
+      },
+      {
+        name: "deleteButton",
+        label: " ",
+        options: {
+          sort: false,
+          customBodyRender: (value, { rowData }) => {
+            return (
+              this.props.params.ownerPerms && (
+                <IconButton
+                  onClick={() => this.handleDeleteNumbersOpen(rowData)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              )
+            );
+          }
+        }
       },
       // TODO: display additional information here about pending and past jobs
       {
-        key: "pendingJobs",
-        label: "",
-        style: inlineStyles.column,
-        render: (columnKey, row) => {
-          if (pendingPhoneNumberJobs.some(j => j.areaCode === row.areaCode)) {
-            return <CircularProgress size={25} />;
-          }
+        name: "pendingJobs",
+        label: " ",
+        options: {
+          sort: false,
+          customBodyRender: (value, tableMeta) =>
+            pendingPhoneNumberJobs.some(
+              j => j.areaCode === tableMeta.rowData[0]
+            ) && <CircularProgress size={25} />
         }
       }
     ];
@@ -154,16 +224,60 @@ class AdminPhoneNumberInventory extends React.Component {
 
   sortTable(table, key, order) {
     table.sort((a, b) => {
-      if (order == 'desc') {
+      if (order == "desc") {
         return a[key] < b[key] ? 1 : -1;
       }
-      if (order == 'asc') {
+      if (order == "asc") {
         return a[key] > b[key] ? 1 : -1;
       }
     });
   }
 
+  renderFilters() {
+    const { phoneNumberCounts } = this.props.data.organization;
+    const { filters } = this.state;
+
+    const states = phoneNumberCounts
+      .reduce(
+        (arr, { state }) => (!arr.includes(state) ? [...arr, state] : arr),
+        []
+      )
+      .sort();
+
+    return (
+      <Paper
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          marginBottom: 40,
+          padding: "10px 20px 30px",
+          width: "100%"
+        }}
+        elevation={3}
+      >
+        <FormControl>
+          <InputLabel>Filter by state</InputLabel>
+          <Select
+            value={filters.state || ""}
+            onChange={this.handleStateFilterChange}
+            style={{ width: 300 }}
+          >
+            <MenuItem value="">None</MenuItem>
+            {states.map(state => (
+              <MenuItem key={state} value={state}>
+                {state}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Paper>
+    );
+  }
+
   renderBuyNumbersForm() {
+    const service = this.props.data.organization.serviceVendor;
+    const serviceName = service.name;
+    const serviceConfig = service.config || "{}";
     return (
       <GSForm
         schema={this.buyNumbersFormSchema()}
@@ -174,36 +288,52 @@ class AdminPhoneNumberInventory extends React.Component {
       >
         <div style={inlineStyles.dialogFields}>
           <Form.Field
+            as={GSTextField}
             label="Area Code"
             name="areaCode"
             {...dataTest("areaCode")}
           />
-          <Form.Field label="Limit" name="limit" {...dataTest("limit")} />
-          {this.props.data.organization.twilioMessageServiceSid
-            && !this.props.data.organization.campaignPhoneNumbersEnabled ? (
-            <Form.Field
-              label="Add to this organization's Messaging Service"
-              name="addToOrganizationMessagingService"
-              type={Toggle}
-              style={{
-                marginTop: 30
-              }}
-              onToggle={(_, toggled) => {
-                this.handleFormChange({
-                  addToOrganizationMessagingService: toggled
-                });
-              }}
-            />
-          ) : null}
+          <Form.Field
+            as={GSTextField}
+            label="Limit"
+            name="limit"
+            {...dataTest("limit")}
+          />
+          {serviceName === "twilio" &&
+            serviceConfig.TWILIO_MESSAGE_SERVICE_SID &&
+            serviceConfig.TWILIO_MESSAGE_SERVICE_SID.length > 0 &&
+            !this.props.data.organization.campaignPhoneNumbersEnabled && (
+              <Form.Field
+                name="addToOrganizationMessagingService"
+                as={props => (
+                  <FormControlLabel
+                    {...props}
+                    checked={props.value}
+                    label="Add to this organization's Messaging Service"
+                    control={<Switch color="primary" />}
+                  />
+                )}
+                style={{
+                  marginTop: 30
+                }}
+                onToggle={(_, toggled) => {
+                  this.handleFormChange({
+                    addToOrganizationMessagingService: toggled
+                  });
+                }}
+              />
+            )}
         </div>
         <div style={inlineStyles.dialogActions}>
-          <FlatButton
+          <Button
+            variant="outlined"
             type="button"
             onClick={this.handleBuyNumbersCancel}
             style={inlineStyles.cancelButton}
-            label="Cancel"
-          />
-          <Form.Button type="submit" label="Submit" />
+          >
+            Cancel
+          </Button>
+          <Form.Submit as={GSSubmitButton} label="Submit" />
         </div>
       </GSForm>
     );
@@ -214,6 +344,8 @@ class AdminPhoneNumberInventory extends React.Component {
       phoneNumberCounts,
       pendingPhoneNumberJobs
     } = this.props.data.organization;
+
+    const { filters } = this.state;
 
     // Push rows for pending jobs as a simple visual indication that counts are
     // being updated.
@@ -228,7 +360,13 @@ class AdminPhoneNumberInventory extends React.Component {
         allocatedCount: 0,
         availableCount: 0
       }));
-    const tableData = [...newAreaCodeRows, ...phoneNumberCounts];
+
+    let tableData = [...newAreaCodeRows, ...phoneNumberCounts];
+
+    if (filters.state) {
+      tableData = tableData.filter(data => data.state === filters.state);
+    }
+
     this.sortTable(tableData, this.state.sortCol, this.state.sortOrder);
     const handleSortOrderChange = (key, order) => {
       this.setState({
@@ -237,32 +375,93 @@ class AdminPhoneNumberInventory extends React.Component {
       });
       this.sortTable(tableData, key, order);
     };
+
+    const options = {
+      filterType: "checkbox",
+      selectableRows: this.props.selectMultiple ? "multiple" : "none",
+      elevation: 0,
+      download: false,
+      print: false,
+      searchable: false,
+      filter: false,
+      sort: true,
+      search: false,
+      viewColumns: false,
+      page: 1,
+      serverSide: true,
+      onTableChange: (action, tableState) => {
+        switch (action) {
+          case "sort":
+            handleSortOrderChange(
+              tableState.sortOrder.name,
+              tableState.sortOrder.direction
+            );
+            break;
+          default:
+            break;
+        }
+      }
+    };
+
     return (
       <div>
-        <DataTables
+        {this.renderFilters()}
+
+        <MUIDataTable
           data={tableData}
           columns={this.tableColumns()}
-          selectable={false}
-          count={tableData.length}
-          showFooterToolbar={false}
-          showRowHover
-          initialSort={{column: 'areaCode', order: 'asc'}}
-          onSortOrderChange={handleSortOrderChange}
+          options={options}
         />
-        <FloatingActionButton
-          {...dataTest("buyPhoneNumbers")}
-          style={theme.components.floatingButton}
-          onTouchTap={this.handleBuyNumbersOpen}
-        >
-          <ContentAdd />
-        </FloatingActionButton>
+
+        {this.props.params.ownerPerms ? (
+          <Fab
+            {...dataTest("buyPhoneNumbers")}
+            color="primary"
+            style={theme.components.floatingButton}
+            onClick={this.handleBuyNumbersOpen}
+          >
+            <AddIcon />
+          </Fab>
+        ) : null}
+
         <Dialog
-          title="Buy Numbers"
-          modal={false}
           open={this.state.buyNumbersDialogOpen}
-          onRequestClose={this.handleBuyNumbersCancel}
+          onClose={this.handleBuyNumbersCancel}
+          fullWidth
+          maxWidth="sm"
         >
-          {this.renderBuyNumbersForm()}
+          <DialogTitle>Buy Numbers</DialogTitle>
+          <DialogContent>{this.renderBuyNumbersForm()}</DialogContent>
+        </Dialog>
+        <Dialog
+          fullWidth
+          maxWidth="sm"
+          open={this.state.deleteNumbersDialogOpen}
+          onClose={this.handleDeleteNumbersCancel}
+        >
+          <DialogTitle>Delete Numbers</DialogTitle>
+          <DialogContent>
+            Do you want to delete availale numbers for the&nbsp;
+            <b>{this.state.deleteNumbersAreaCode}</b> area code? This will
+            permanently remove numbers not allocated to a campaign/messaging
+            service from both Spoke and your Twilio account.
+          </DialogContent>
+          <DialogActions>
+            <Button
+              variant="outlined"
+              style={inlineStyles.cancelButton}
+              onClick={this.handleDeleteNumbersCancel}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="contained"
+              color="secondary"
+              onClick={this.handleDeletePhoneNumbersSubmit}
+            >
+              Delete {this.state.deleteNumbersCount} Numbers
+            </Button>
+          </DialogActions>
         </Dialog>
       </div>
     );
@@ -275,7 +474,10 @@ const queries = {
       query getOrganizationData($organizationId: String!) {
         organization(id: $organizationId) {
           id
-          twilioMessageServiceSid
+          serviceVendor {
+            name
+            config
+          }
           campaignPhoneNumbersEnabled
           phoneNumberCounts {
             areaCode
@@ -332,6 +534,23 @@ const mutations = {
       areaCode,
       limit,
       addToOrganizationMessagingService
+    },
+    refetchQueries: () => ["getOrganizationData"]
+  }),
+  deletePhoneNumbers: ownProps => areaCode => ({
+    mutation: gql`
+      mutation deletePhoneNumbers($organizationId: ID!, $areaCode: String!) {
+        deletePhoneNumbers(
+          organizationId: $organizationId
+          areaCode: $areaCode
+        ) {
+          id
+        }
+      }
+    `,
+    variables: {
+      organizationId: ownProps.params.organizationId,
+      areaCode
     },
     refetchQueries: () => ["getOrganizationData"]
   })
