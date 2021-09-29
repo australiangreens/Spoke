@@ -1,5 +1,5 @@
 import DeleteIcon from "@material-ui/icons/Delete";
-import Subheader from "@material-ui/core/Subheader";
+import ListSubheader from "@material-ui/core/ListSubheader";
 import Avatar from "@material-ui/core/Avatar";
 import FolderIcon from "@material-ui/icons/Folder";
 import type from "prop-types";
@@ -70,7 +70,7 @@ class MultiAutoCompleteSelect extends React.Component {
           <div style={{ padding: "5px" }}>
             <div style={{ display: "flex" }}>
               <List style={{ flexBasis: "50%" }}>
-                <Subheader inset={true}>Selected groups</Subheader>
+                <ListSubheader inset={true}>Selected groups</ListSubheader>
                 {(this.props.value || []).map(value => (
                   <ListItem
                     leftAvatar={<Avatar icon={<FolderIcon />} />}
