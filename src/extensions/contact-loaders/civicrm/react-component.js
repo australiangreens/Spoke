@@ -8,7 +8,7 @@ import GSForm from "../../../components/forms/GSForm";
 import Form from "react-formal";
 import { ListItem, List } from "@material-ui/core";
 import yup from "yup";
-import AutoComplete from "@material-ui/lab/AutoComplete";
+import Autocomplete from "@material-ui/lab/Autocomplete";
 import LoadingIndicator from "../../../components/LoadingIndicator";
 import * as _ from "lodash";
 import Paper from "@material-ui/core/Paper";
@@ -85,13 +85,13 @@ class MultiAutoCompleteSelect extends React.Component {
             </div>
 
             <div style={{ display: "flex" }}>
-              <AutoComplete
+              <Autocomplete
                 style={{ flexBasis: "33.33%" }}
                 label="CiviCRM list"
                 name="groupId"
                 as="select"
                 searchText={this.state.searchText}
-                filter={AutoComplete.noFilter}
+                filter={Autocomplete.noFilter}
                 dataSource={this.state.result}
                 onNewRequest={function(el) {
                   self.setState(old => {
