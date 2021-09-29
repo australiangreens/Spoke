@@ -1,7 +1,7 @@
 import DeleteIcon from "@material-ui/icons/Delete";
 import Subheader from "@material-ui/core/Subheader";
 import Avatar from "@material-ui/core/Avatar";
-import FileFolder from "material-ui/svg-icons/file/folder";
+import FolderIcon from "@material-ui/icons/Folder";
 import type from "prop-types";
 import React from "react";
 import GSForm from "../../../components/forms/GSForm";
@@ -73,7 +73,7 @@ class MultiAutoCompleteSelect extends React.Component {
                 <Subheader inset={true}>Selected groups</Subheader>
                 {(this.props.value || []).map(value => (
                   <ListItem
-                    leftAvatar={<Avatar icon={<FileFolder />} />}
+                    leftAvatar={<Avatar icon={<FolderIcon />} />}
                     rightIcon={
                       <DeleteIcon onClick={this.remove.bind(this, value.id)} />
                     }
