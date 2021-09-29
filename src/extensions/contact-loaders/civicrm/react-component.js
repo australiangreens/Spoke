@@ -1,17 +1,17 @@
-import ActionDelete from "material-ui/svg-icons/action/delete";
-import Subheader from "material-ui/Subheader";
-import Avatar from "material-ui/Avatar";
+import DeleteIcon from "@material-ui/icons/Delete";
+import Subheader from "@material-ui/core/Subheader";
+import Avatar from "@material-ui/core/Avatar";
 import FileFolder from "material-ui/svg-icons/file/folder";
 import type from "prop-types";
 import React from "react";
 import GSForm from "../../../components/forms/GSForm";
 import Form from "react-formal";
-import { ListItem, List } from "material-ui/List";
+import { ListItem, List } from "@material-ui/core";
 import yup from "yup";
-import AutoComplete from "material-ui/AutoComplete";
+import AutoComplete from "@material-ui/lab/AutoComplete";
 import LoadingIndicator from "../../../components/LoadingIndicator";
 import * as _ from "lodash";
-import Paper from "material-ui/Paper";
+import Paper from "@material-ui/core/Paper";
 
 class MultiAutoCompleteSelect extends React.Component {
   state = {
@@ -75,9 +75,7 @@ class MultiAutoCompleteSelect extends React.Component {
                   <ListItem
                     leftAvatar={<Avatar icon={<FileFolder />} />}
                     rightIcon={
-                      <ActionDelete
-                        onClick={this.remove.bind(this, value.id)}
-                      />
+                      <DeleteIcon onClick={this.remove.bind(this, value.id)} />
                     }
                     key={value.id}
                     primaryText={value.title}
