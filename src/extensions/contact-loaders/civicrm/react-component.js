@@ -62,6 +62,14 @@ class MultiAutoCompleteSelect extends React.Component {
     this.setState({ value: props.value });
   }
 
+  // The above is unsafe, but seems to be used. We need to do something about that.
+  // static getDerivedStateFromProps(nextProps, prevState) {
+  //   if (nextProps.value !== prevState.value) {
+  //     return { value: nextProps.value };
+  //   }
+  //   else return null; // Triggers no change in the state
+  // }
+
   remove(id) {
     this.setState(old => ({
       value: _.remove(old.value, item => item.id === id)
