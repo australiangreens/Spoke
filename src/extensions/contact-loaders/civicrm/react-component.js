@@ -192,13 +192,17 @@ export class CampaignContactsForm extends React.Component {
 
     if (this.props.lastResult && this.props.lastResult.result) {
       try {
-        const { message, finalCount } = JSON.parse(lastResult.result);
+        const { message, finalCount } = JSON.parse(
+          this.props.lastResult.result
+        );
         resultMessage = message ? message : `Loaded ${finalCount} contacts`;
       } catch (err) {
         resultMessage = err.message;
       }
     } else if (this.state.error) {
       resultMessage = "Error: " + JSON.stringify(this.state.error);
+    } else {
+      resultMessage = "";
     }
 
     let subtitle = (
