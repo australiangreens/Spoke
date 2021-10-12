@@ -1,17 +1,38 @@
 import DeleteIcon from "@material-ui/icons/Delete";
-import ListSubheader from "@material-ui/core/ListSubheader";
+//import ListSubheader from "@material-ui/core/ListSubheader";
 import Avatar from "@material-ui/core/Avatar";
 import FolderIcon from "@material-ui/icons/Folder";
-import type from "prop-types";
-import React from "react";
-import GSForm from "../../../components/forms/GSForm";
-import Form from "react-formal";
-import { ListItem, List } from "@material-ui/core";
-import yup from "yup";
+import TextField from "@material-ui/core/TextField";
+// import type from "prop-types";
+// import React from "react";
+// import GSForm from "../../../components/forms/GSForm";
+// import Form from "react-formal";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import LoadingIndicator from "../../../components/LoadingIndicator";
 import * as _ from "lodash";
 import Paper from "@material-ui/core/Paper";
+
+import type from "prop-types";
+import React from "react";
+import * as yup from "yup";
+import humps from "humps";
+import { StyleSheet, css } from "aphrodite";
+import Form from "react-formal";
+
+import Divider from "@material-ui/core/Divider";
+import Button from "@material-ui/core/Button";
+import List from "@material-ui/core/List";
+import ListItem from "@material-ui/core/ListItem";
+import ListItemIcon from "@material-ui/core/ListItemIcon";
+import ListItemText from "@material-ui/core/ListItemText";
+import ListSubheader from "@material-ui/core/ListSubheader";
+
+import { parseCSV, gzip, requiredUploadFields } from "../../../lib";
+import GSForm from "../../../components/forms/GSForm";
+import CampaignFormSectionHeading from "../../../components/CampaignFormSectionHeading";
+import theme from "../../../styles/theme";
+import { dataTest } from "../../../lib/attributes";
+import GSSubmitButton from "../../../components/forms/GSSubmitButton";
 
 class MultiAutoCompleteSelect extends React.Component {
   state = {
@@ -23,6 +44,7 @@ class MultiAutoCompleteSelect extends React.Component {
   };
 
   refreshList(query) {
+    console.log(query);
     if (query.length < 3) {
       this.setState({ result: [] });
       return;
@@ -37,6 +59,7 @@ class MultiAutoCompleteSelect extends React.Component {
         if (res.error) {
           this.setError(res.error);
         } else {
+          console.log(res);
           this.setState({ result: res.groups, loading: false, error: null });
         }
       })
@@ -66,7 +89,7 @@ class MultiAutoCompleteSelect extends React.Component {
     console.log(this.props);
     return (
       <div style={{ display: "flex" }}>
-        <Paper zDepth={2} style={{ flexBasis: "50%" }}>
+        <Paper elevation={2} style={{ flexBasis: "50%" }}>
           <div style={{ padding: "5px" }}>
             <div style={{ display: "flex" }}>
               <List style={{ flexBasis: "50%" }}>
@@ -87,28 +110,29 @@ class MultiAutoCompleteSelect extends React.Component {
             <div style={{ display: "flex" }}>
               <Autocomplete
                 style={{ flexBasis: "33.33%" }}
+                options={this.state.result}
                 label="CiviCRM list"
                 name="groupId"
                 as="select"
-                searchText={this.state.searchText}
                 filter={Autocomplete.noFilter}
-                dataSource={this.state.result}
-                onNewRequest={function(el) {
+                onChange={function(event, el) {
                   self.setState(old => {
                     const newValue = old.value.concat([el]);
                     self.props.onChange(newValue);
                     return { value: newValue, searchText: "" };
                   });
                 }}
-                onUpdateInput={text => {
+                onInputChange={(event, text) => {
                   this.refreshList(text);
                   this.setState({ searchText: text });
                 }}
-                dataSourceConfig={{
-                  text: "title",
-                  value: "id"
-                }}
-                hintText="Choose CiviCRM list"
+                renderInput={params => (
+                  <TextField
+                    {...params}
+                    label="CiviCRM list"
+                    variant="outlined"
+                  />
+                )}
               />
               {this.state.loading && <LoadingIndicator />}
             </div>
@@ -125,17 +149,7 @@ export class CampaignContactsForm extends React.Component {
     result: []
   };
 
-  render() {
-    const { lastResult } = this.props,
-      props = this.props;
-    let resultMessage = "";
-    if (lastResult && lastResult.result) {
-      const { message, finalCount } = JSON.parse(lastResult.result);
-      resultMessage = message ? message : `Loaded ${finalCount} contacts`;
-    } else if (this.state.error) {
-      resultMessage = "Error: " + JSON.stringify(this.state.error);
-    }
-
+  renderForm(resultMessage) {
     return (
       <GSForm
         schema={yup.object({
@@ -147,37 +161,64 @@ export class CampaignContactsForm extends React.Component {
             })
           )
         })}
-        initialValues={{ groupIds: [] }}
+        // initialValues={{ groupIds: [] }}
         onChange={formValues => {
           this.setState({ ...formValues });
-          props.onChange(JSON.stringify(formValues));
+          this.props.onChange(JSON.stringify(formValues));
         }}
         onSubmit={formValues => {
           // sets values locally
           this.setState({ ...formValues });
           // triggers the parent to update values
-          props.onChange(JSON.stringify(formValues));
+          this.props.onChange(JSON.stringify(formValues));
           // and now do whatever happens when clicking 'Next'
-          props.onSubmit();
+          this.props.onSubmit();
         }}
       >
-        <Form.Field name="groupIds" type={MultiAutoCompleteSelect}></Form.Field>
-
+        <Form.Field name="groupIds" as={MultiAutoCompleteSelect}></Form.Field>
         <List>
           {resultMessage ? (
             <ListItem
               primaryText={resultMessage}
-              leftIcon={props.icons.warning}
+              leftIcon={this.props.icons.warning}
             />
           ) : null}
         </List>
-
-        <Form.Button
-          type="submit"
-          disabled={props.saveDisabled}
-          label={props.saveLabel}
+        <Form.Submit
+          as={GSSubmitButton}
+          disabled={this.props.saveDisabled}
+          label={this.props.saveLabel}
         />
       </GSForm>
+    );
+  }
+
+  render() {
+    let resultMessage = "";
+
+    if (this.props.lastResult && this.props.lastResult.result) {
+      try {
+        const { message, finalCount } = JSON.parse(lastResult.result);
+        resultMessage = message ? message : `Loaded ${finalCount} contacts`;
+      } catch (err) {
+        resultMessage = err.message;
+      }
+    } else if (this.state.error) {
+      resultMessage = "Error: " + JSON.stringify(this.state.error);
+    }
+
+    let subtitle = (
+      <span>
+        Your source should be a CiviCRM database with contacts you wish to
+        upload.
+      </span>
+    );
+
+    return (
+      <div>
+        {subtitle}
+        {this.renderForm(resultMessage)}
+      </div>
     );
   }
 }
