@@ -1,37 +1,24 @@
 import DeleteIcon from "@material-ui/icons/Delete";
-//import ListSubheader from "@material-ui/core/ListSubheader";
 import Avatar from "@material-ui/core/Avatar";
 import FolderIcon from "@material-ui/icons/Folder";
 import TextField from "@material-ui/core/TextField";
-// import type from "prop-types";
-// import React from "react";
-// import GSForm from "../../../components/forms/GSForm";
-// import Form from "react-formal";
 import Autocomplete from "@material-ui/lab/Autocomplete";
 import LoadingIndicator from "../../../components/LoadingIndicator";
 import * as _ from "lodash";
 import Paper from "@material-ui/core/Paper";
-
 import type from "prop-types";
 import React from "react";
 import * as yup from "yup";
-import humps from "humps";
-import { StyleSheet, css } from "aphrodite";
 import Form from "react-formal";
-
-import Divider from "@material-ui/core/Divider";
-import Button from "@material-ui/core/Button";
 import List from "@material-ui/core/List";
 import ListItem from "@material-ui/core/ListItem";
 import ListItemIcon from "@material-ui/core/ListItemIcon";
 import ListItemText from "@material-ui/core/ListItemText";
+import ListItemAvatar from "@material-ui/core/ListItemAvatar";
 import ListSubheader from "@material-ui/core/ListSubheader";
-
-import { parseCSV, gzip, requiredUploadFields } from "../../../lib";
+import ListItemSecondaryAction from "@material-ui/core/ListItemSecondaryAction";
+import IconButton from "@material-ui/core/IconButton";
 import GSForm from "../../../components/forms/GSForm";
-import CampaignFormSectionHeading from "../../../components/CampaignFormSectionHeading";
-import theme from "../../../styles/theme";
-import { dataTest } from "../../../lib/attributes";
 import GSSubmitButton from "../../../components/forms/GSSubmitButton";
 
 class MultiAutoCompleteSelect extends React.Component {
@@ -44,7 +31,6 @@ class MultiAutoCompleteSelect extends React.Component {
   };
 
   refreshList(query) {
-    console.log(query);
     if (query.length < 3) {
       this.setState({ result: [] });
       return;
@@ -59,7 +45,6 @@ class MultiAutoCompleteSelect extends React.Component {
         if (res.error) {
           this.setError(res.error);
         } else {
-          console.log(res);
           this.setState({ result: res.groups, loading: false, error: null });
         }
       })
@@ -86,7 +71,6 @@ class MultiAutoCompleteSelect extends React.Component {
   render() {
     const self = this;
 
-    console.log(this.props);
     return (
       <div style={{ display: "flex" }}>
         <Paper elevation={2} style={{ flexBasis: "50%" }}>
@@ -95,14 +79,23 @@ class MultiAutoCompleteSelect extends React.Component {
               <List style={{ flexBasis: "50%" }}>
                 <ListSubheader inset={true}>Selected groups</ListSubheader>
                 {(this.props.value || []).map(value => (
-                  <ListItem
-                    leftAvatar={<Avatar icon={<FolderIcon />} />}
-                    rightIcon={
-                      <DeleteIcon onClick={this.remove.bind(this, value.id)} />
-                    }
-                    key={value.id}
-                    primaryText={value.title}
-                  />
+                  <ListItem key={value.id}>
+                    <ListItemAvatar>
+                      <Avatar>
+                        <FolderIcon />
+                      </Avatar>
+                    </ListItemAvatar>
+                    <ListItemText primary={value.title} />
+                    <ListItemSecondaryAction>
+                      <IconButton
+                        edge="end"
+                        aria-label="delete"
+                        onClick={this.remove.bind(this, value.id)}
+                      >
+                        <DeleteIcon />
+                      </IconButton>
+                    </ListItemSecondaryAction>
+                  </ListItem>
                 ))}
               </List>
             </div>
@@ -133,6 +126,7 @@ class MultiAutoCompleteSelect extends React.Component {
                     variant="outlined"
                   />
                 )}
+                getOptionLabel={option => option.title || ""}
               />
               {this.state.loading && <LoadingIndicator />}
             </div>
@@ -178,10 +172,10 @@ export class CampaignContactsForm extends React.Component {
         <Form.Field name="groupIds" as={MultiAutoCompleteSelect}></Form.Field>
         <List>
           {resultMessage ? (
-            <ListItem
-              primaryText={resultMessage}
-              leftIcon={this.props.icons.warning}
-            />
+            <ListItem>
+              <ListItemIcon>{this.props.icons.warning}</ListItemIcon>
+              <ListItemText primary={resultMessage} />
+            </ListItem>
           ) : null}
         </List>
         <Form.Submit
