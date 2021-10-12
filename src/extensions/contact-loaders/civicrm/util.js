@@ -11,7 +11,7 @@ export const CUSTOM_DATA = [
 ];
 
 function getCivi() {
-  const domain = parse(getConfig("CIVICRM_DOMAIN"));
+  const domain = parse(getConfig("CIVICRM_API_URL"));
 
   const config = {
     server: domain.protocol + "//" + domain.host,

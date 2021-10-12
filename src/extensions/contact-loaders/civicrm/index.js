@@ -16,7 +16,7 @@ export function serverAdministratorInstructions() {
     environmentVariables: [
       "CIVICRM_API_KEY",
       "CIVICRM_SITE_KEY",
-      "CIVICRM_DOMAIN"
+      "CIVICRM_API_URL"
     ],
     description: "Allows you to pull contacts directly from CiviCRM",
     setupInstructions: "Configure the environment variables"
