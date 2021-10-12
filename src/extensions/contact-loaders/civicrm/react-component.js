@@ -109,11 +109,15 @@ class MultiAutoCompleteSelect extends React.Component {
                 as="select"
                 filter={Autocomplete.noFilter}
                 onChange={function(event, el) {
-                  self.setState(old => {
-                    const newValue = old.value.concat([el]);
-                    self.props.onChange(newValue);
-                    return { value: newValue, searchText: "" };
-                  });
+                  if (el) {
+                    self.setState(old => {
+                      const newValue = old.value.concat([el]);
+                      self.props.onChange(newValue);
+                      return { value: newValue, searchText: "" };
+                    });
+                  } else {
+                    self.setState({ value: [], searchText: "" });
+                  }
                 }}
                 onInputChange={(event, text) => {
                   this.refreshList(text);
@@ -207,8 +211,7 @@ export class CampaignContactsForm extends React.Component {
 
     let subtitle = (
       <span>
-        Your source should be a CiviCRM database with contacts you wish to
-        upload.
+        Your source should be a CiviCRM group with contacts you wish to upload.
       </span>
     );
 
@@ -225,12 +228,9 @@ CampaignContactsForm.propTypes = {
   onChange: type.func,
   onSubmit: type.func,
   campaignIsStarted: type.bool,
-
   icons: type.object,
-
   saveDisabled: type.bool,
   saveLabel: type.string,
-
   clientChoiceData: type.string,
   jobResultMessage: type.string,
   lastResult: type.object
