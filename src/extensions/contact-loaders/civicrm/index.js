@@ -24,13 +24,13 @@ export function serverAdministratorInstructions() {
 }
 
 export async function available(organization, user) {
-  /// return an object with two keys: result: true/false
-  /// these keys indicate if the ingest-contact-loader is usable
-  /// Sometimes credentials need to be setup, etc.
-  /// A second key expiresSeconds: should be how often this needs to be checked
-  /// If this is instantaneous, you can have it be 0 (i.e. always), but if it takes time
-  /// to e.g. verify credentials or test server availability,
-  /// then it's better to allow the result to be cached
+  // return an object with two keys: result: true/false
+  // these keys indicate if the ingest-contact-loader is usable
+  // Sometimes credentials need to be setup, etc.
+  // A second key expiresSeconds: should be how often this needs to be checked
+  // If this is instantaneous, you can have it be 0 (i.e. always), but if it takes time
+  // to e.g. verify credentials or test server availability,
+  // then it's better to allow the result to be cached
   const result = serverAdministratorInstructions().environmentVariables.every(
     name => hasConfig(name)
   );
@@ -121,27 +121,39 @@ export async function processContactLoad(job, maxContacts, organization) {
 
   let finalCount = 0;
   for (const group of contactData.groupIds) {
-    finalCount += await getGroupMembers(group.id, async results => {
-      const newContacts = results.map(res => ({
-        first_name: res.first_name,
-        last_name: res.last_name,
-        cell: getFormattedPhoneNumber(
-          res.phone,
-          getConfig("PHONE_NUMBER_COUNTRY")
-        ),
-        zip: res.postal_code,
-        external_id: res.id,
-        custom_fields: JSON.stringify(_.pick(res, CUSTOM_DATA)),
-        message_status: "needsMessage",
-        campaign_id: campaignId
-      }));
-      console.log("loading", newContacts.length, "contacts");
+    await getGroupMembers(group.id, async results => {
+      console.log(results);
+      const newContacts = results
+        .filter(res => res["api.Phone.get"]["count"] > 0)
+        .map(res => ({
+          first_name: res.first_name,
+          last_name: res.last_name,
+          cell: getFormattedPhoneNumber(
+            res["api.Phone.get"]["values"][0]["phone_numeric"],
+            getConfig("PHONE_NUMBER_COUNTRY")
+          ),
+          zip: res.postal_code,
+          external_id: res.id,
+          custom_fields: JSON.stringify(
+            _.pick({
+              phone_id: res["api.Phone.get"]["values"][0]["id"]
+            })
+          ),
+          message_status: "needsMessage",
+          campaign_id: campaignId
+        }))
+        .filter(res => res.cell !== "");
 
-      await r.knex.batchInsert(
-        "campaign_contact",
-        newContacts,
-        newContacts.length
-      );
+      console.log("loading", newContacts.length, "contacts");
+      finalCount += newContacts.length;
+
+      if (newContacts.length) {
+        await r.knex.batchInsert(
+          "campaign_contact",
+          newContacts,
+          newContacts.length
+        );
+      }
     });
   }
 
