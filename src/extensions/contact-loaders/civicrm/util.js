@@ -1,5 +1,4 @@
 import civicrm from "civicrm";
-import { parse } from "url";
 import { getConfig } from "../../../server/api/lib/config";
 
 const PAGE_SIZE = 100;
@@ -11,7 +10,7 @@ export const CUSTOM_DATA = [
 ];
 
 function getCivi() {
-  const domain = parse(getConfig("CIVICRM_API_URL"));
+  const domain = new URL(getConfig("CIVICRM_API_URL"));
 
   const config = {
     server: domain.protocol + "//" + domain.host,
