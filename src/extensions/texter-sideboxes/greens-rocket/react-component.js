@@ -112,9 +112,6 @@ export class TexterSidebox extends React.Component {
 TexterSidebox.propTypes = {
   // data
   contact: type.object,
-  campaign: type.object,
-  assignment: type.object,
-  texter: type.object,
   settingsData: type.object,
 
   // parent state
