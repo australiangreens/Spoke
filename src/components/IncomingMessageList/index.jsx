@@ -192,7 +192,7 @@ export class IncomingMessageList extends Component {
               {"No Messages"}
               <br />
               <span style={{ color: "gray", fontSize: "85%" }}>
-                {"Assigned contact "} {moment.utc(row.updatedAt).fromNow()}
+                {"Assigned "} {moment.utc(row.updatedAt).fromNow()}
               </span>
             </p>
           );
