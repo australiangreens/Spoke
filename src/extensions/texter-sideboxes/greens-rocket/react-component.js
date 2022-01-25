@@ -25,6 +25,8 @@ export class TexterSidebox extends React.Component {
       : "";
     const texterInstructions = settingsData.texterInstructions;
 
+    console.log(contactCustomData);
+
     return (
       <div style={{ textAlign: "center" }}>
         <div>
