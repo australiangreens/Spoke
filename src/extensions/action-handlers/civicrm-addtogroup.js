@@ -95,12 +95,15 @@ export async function processDeletedQuestionResponse(options) {}
 
 // eslint-disable-next-line no-unused-vars
 export async function getClientChoiceData(organization, user) {
+  console.log("getClientChoiceData has been called");
   const getGroupData = await searchGroups("");
   const items = getGroupData.map(item => {
     return { name: item.title, details: item.id };
   });
+  console.log(items);
   return {
     data: `${JSON.stringify({ items })}`,
-    expiresSeconds: getCacheLength(CIVICRM_ACTION_HANDLER_ADDGROUP)
+    //    expiresSeconds: getCacheLength(CIVICRM_ACTION_HANDLER_ADDGROUP)
+    expireSeconds: 3600
   };
 }
