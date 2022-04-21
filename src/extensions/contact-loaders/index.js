@@ -11,12 +11,14 @@ const choiceDataCacheKey = (name, organizationId, suffix) =>
 const CONFIGURED_INGEST_METHODS = getIngestMethods();
 
 async function getSetCacheableResult(cacheKey, fallbackFunc) {
+  console.log(`getSetCacheableResult() called, r.redis = ${r.redis}. cacheKey = ${cacheKey}`);
   if (r.redis) {
     const cacheRes = await r.redis.getAsync(cacheKey);
     if (cacheRes) {
       return JSON.parse(cacheRes);
     }
   }
+
   const slowRes = await fallbackFunc();
   if (r.redis && slowRes && slowRes.expiresSeconds) {
     await r.redis
@@ -38,8 +40,8 @@ async function getIngestAvailability(name, ingestMethod, organization, user) {
 }
 
 export function rawIngestMethod(name) {
-  /// RARE: You should almost always use getIngestMethod() below,
-  /// unless workflow has already tested availability for the org-user
+  // / RARE: You should almost always use getIngestMethod() below,
+  // / unless workflow has already tested availability for the org-user
   return CONFIGURED_INGEST_METHODS[name];
 }
 
@@ -88,9 +90,10 @@ export async function getMethodChoiceData(
     cacheFunc(campaign, user)
   );
   return (
-    await getSetCacheableResult(cacheKey, async () =>
-      ingestMethod.getClientChoiceData(organization, campaign, user)
-    )
+    await getSetCacheableResult(cacheKey, async () => {
+      console.log(`No cached value (no redis or expired, using fallback: calling ${ingestMethod.name}'s getClientChoiceData method`);
+      return await ingestMethod.getClientChoiceData(organization, campaign, user);
+    })
   ).data;
 }
 

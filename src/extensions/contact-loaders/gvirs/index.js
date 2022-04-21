@@ -51,7 +51,9 @@ export async function available(organization, user) {
     ) &&
     organization.name in
       decomposeGVIRSConnections(getConfig("GVIRS_CONNECTIONS"));
-  return {
+  console.log(`gvirs available = ${result}`);
+
+      return {
     result,
     expiresSeconds: GVIRS_CACHE_SECONDS
   };
