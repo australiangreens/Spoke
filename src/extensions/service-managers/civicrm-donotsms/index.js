@@ -16,6 +16,8 @@ export const metadata = () => ({
   supportsCampaignConfig: true
 });
 
+// When a contact is opted out
+// ! This is not currently functional, see https://github.com/MoveOnOrg/Spoke/issues/2069
 export async function onOptOut({
   organization,
   contact,
