@@ -5,6 +5,7 @@ import isUrl from "is-url";
 import _ from "lodash";
 import { gzip, makeTree, getHighestRole } from "../../lib";
 import { capitalizeWord, groupCannedResponses } from "./lib/utils";
+import httpRequest from "../lib/http-request";
 import ownedPhoneNumber from "./lib/owned-phone-number";
 
 import { getIngestMethod } from "../../extensions/contact-loaders";
@@ -42,7 +43,7 @@ import {
   processServiceManagers,
   serviceManagersHaveImplementation
 } from "../../extensions/service-managers";
-import { getConfig, getFeatures } from "./lib/config";
+import { getConfig, getFeatures, getTheme } from "./lib/config";
 import { resolvers as messageResolvers } from "./message";
 import { resolvers as optOutResolvers } from "./opt-out";
 import { resolvers as organizationResolvers } from "./organization";
@@ -330,9 +331,13 @@ async function editCampaign(id, campaign, loaders, user, origCampaignRecord) {
     for (let index = 0; index < cannedResponses.length; index++) {
       const response = cannedResponses[index];
       convertedResponses.push({
-        ...response,
         campaign_id: id,
-        id: undefined
+        id: undefined,
+        title: response.title,
+        text: response.text,
+        tagIds: response.tagIds,
+        answer_actions: response.answerActions,
+        answer_actions_data: response.answerActionsData
       });
     }
 
@@ -645,23 +650,68 @@ const rootMutations = {
         return userData;
       }
     },
-    resetUserPassword: async (_, { organizationId, userId }, { user }) => {
+    resetUserPassword: async (
+      _,
+      { organizationId, userId },
+      { user, loaders }
+    ) => {
       if (user.id === userId) {
         throw new Error("You can't reset your own password.");
       }
+      // might need to impliment user password change available elsewhere.
+
       await accessRequired(user, organizationId, "ADMIN", true);
 
-      // Add date at the end in case user record is modified after password is reset
-      const passwordResetHash = uuidv4();
-      const auth0_id = `reset|${passwordResetHash}|${Date.now()}`;
+      const organization = await loaders.organization.load(organizationId);
 
-      const userRes = await r
-        .knex("user")
-        .where("id", userId)
-        .update({
-          auth0_id
+      const passportStrategy = getConfig("PASSPORT_STRATEGY", organization);
+      if (passportStrategy === "auth0") {
+        const { email } = await r
+          .knex("user")
+          .select("email")
+          .where({
+            "user.id": userId
+          })
+          .first();
+
+        const auth0Domain = getConfig("AUTH0_DOMAIN", organization);
+        const auth0ClientID = getConfig("AUTH0_CLIENT_ID", organization);
+        const url = `https://${auth0Domain}/dbconnections/change_password`;
+        const body = JSON.stringify({
+          client_id: auth0ClientID,
+          email,
+          connection: "Username-Password-Authentication"
         });
-      return passwordResetHash;
+        try {
+          let res = await httpRequest(url, {
+            method: "POST",
+            retries: 2,
+            timeout: 5000,
+            headers: { "Content-Type": "application/json" },
+            body,
+            validStatuses: [200],
+            compress: false
+          });
+          res = await res.text();
+          console.log(res, email);
+          return res;
+        } catch (err) {
+          //handles error and sends it to the client
+          throw new Error(err);
+        }
+      } else {
+        // Add date at the end in case user record is modified after password is reset
+        const passwordResetHash = uuidv4();
+        const auth0_id = `reset|${passwordResetHash}|${Date.now()}`;
+
+        const userRes = await r
+          .knex("user")
+          .where("id", userId)
+          .update({
+            auth0_id
+          });
+        return passwordResetHash;
+      }
     },
     changeUserPassword: async (_, { userId, formData }, { user }) => {
       if (user.id !== userId) {
@@ -717,6 +767,32 @@ const rootMutations = {
       const organization = await Organization.get(organizationId);
       const featuresJSON = getFeatures(organization);
       featuresJSON.opt_out_message = optOutMessage;
+      organization.features = JSON.stringify(featuresJSON);
+
+      await organization.save();
+      await cacheableData.organization.clear(organizationId);
+
+      return await Organization.get(organizationId);
+    },
+    updateTheme: async (
+      _,
+      { organizationId, primary, secondary, info, success, warning, error },
+      { user }
+    ) => {
+      await accessRequired(user, organizationId, "OWNER");
+
+      const organization = await Organization.get(organizationId);
+      const featuresJSON = getFeatures(organization);
+      featuresJSON.theme = {
+        palette: {
+          primary: { main: primary },
+          secondary: { main: secondary },
+          info: { main: info },
+          success: { main: success },
+          warning: { main: warning },
+          error: { main: error }
+        }
+      };
       organization.features = JSON.stringify(featuresJSON);
 
       await organization.save();
@@ -876,7 +952,9 @@ const rootMutations = {
               {
                 campaign_id: newCampaignId,
                 title: response.title,
-                text: response.text
+                text: response.text,
+                answer_actions: response.answer_actions,
+                answer_actions_data: response.answer_actions_data
               },
               ["id"]
             )
@@ -999,7 +1077,9 @@ const rootMutations = {
         campaign_id: cannedResponse.campaignId,
         user_id: cannedResponse.userId,
         title: cannedResponse.title,
-        text: cannedResponse.text
+        text: cannedResponse.text,
+        answer_actions: cannedResponse.answerActions,
+        answer_actions_data: cannedResponse.answerActionsData
       }).save();
       // deletes duplicate created canned_responses
       let query = r
@@ -1069,22 +1149,39 @@ const rootMutations = {
     },
     editCampaignContactMessageStatus: async (
       _,
-      { messageStatus, campaignContactId },
+      { messageStatus, campaignContactId, campaignIdsContactIds },
       { user }
     ) => {
-      const contact = await cacheableData.campaignContact.load(
-        campaignContactId
+      const contacts = campaignContactId
+        ? [{ campaignContactId }]
+        : campaignIdsContactIds;
+      // this is lazy but is not likely to be done in great bulk
+      console.log("editCampaignContactMessageStatus", contacts);
+      await Promise.all(
+        contacts.map(async ({ campaignContactId }) => {
+          const contact = await cacheableData.campaignContact.load(
+            campaignContactId
+          );
+          const organizationId = await cacheableData.campaignContact.orgId(
+            contact
+          );
+          await assignmentRequiredOrAdminRole(
+            user,
+            organizationId,
+            contact.assignment_id,
+            contact
+          );
+          contact.message_status = messageStatus;
+          await cacheableData.campaignContact.updateStatus(
+            contact,
+            messageStatus
+          );
+        })
       );
-      const organizationId = await cacheableData.campaignContact.orgId(contact);
-      await assignmentRequiredOrAdminRole(
-        user,
-        organizationId,
-        contact.assignment_id,
-        contact
-      );
-      contact.message_status = messageStatus;
-      await cacheableData.campaignContact.updateStatus(contact, messageStatus);
-      return contact;
+      return contacts.map(contact => ({
+        id: contact.campaignContactId,
+        message_status: messageStatus
+      }));
     },
     getAssignmentContacts: async (
       _,
@@ -1191,9 +1288,7 @@ const rootMutations = {
         contact.campaign_id
       );
       const { assignmentId, reason } = optOut;
-      const organization = await loaders.organization.load(
-        campaign.organization_id
-      );
+      const organization = await Organization.get(campaign.organization_id);
       await cacheableData.optOut.save({
         cell: contact.cell,
         campaignContactId,

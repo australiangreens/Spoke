@@ -24,6 +24,7 @@ import React from "react";
 import loadData from "./hoc/load-data";
 import gql from "graphql-tag";
 import { withRouter } from "react-router";
+import { compose } from "recompose";
 import GSForm from "../components/forms/GSForm";
 import GSTextField from "../components/forms/GSTextField";
 import GSSubmitButton from "../components/forms/GSSubmitButton";
@@ -39,6 +40,7 @@ import CardContent from "@material-ui/core/CardContent";
 import { StyleSheet, css } from "aphrodite";
 import apolloClient from "../network/apollo-client-singleton";
 import { dataTest } from "../lib/attributes";
+import withMuiTheme from "./../containers/hoc/withMuiTheme";
 
 const styles = StyleSheet.create({
   container: {
@@ -86,6 +88,7 @@ const fetchOrg = async organizationId =>
         organization(id: $organizationId) {
           id
           name
+          theme
           profileFields {
             name
             label
@@ -96,7 +99,7 @@ const fetchOrg = async organizationId =>
     variables: { organizationId }
   });
 
-export class UserEdit extends React.Component {
+export class UserEditBase extends React.Component {
   static propTypes = {
     mutations: PropTypes.object,
     currentUser: PropTypes.object,
@@ -307,6 +310,7 @@ export class UserEdit extends React.Component {
             as={GSTextField}
             label="Email"
             name="email"
+            disabled={window.PASSPORT_STRATEGY === "auth0"}
             {...dataTest("email")}
           />
           {(!authType || authType === "signup") && (
@@ -371,9 +375,11 @@ export class UserEdit extends React.Component {
             userId === currentUser.currentUser.id &&
             !fieldsNeeded && (
               <div className={css(styles.container)}>
-                <Button onClick={this.handleClick} variant="outlined">
-                  Change password
-                </Button>
+                {window.PASSPORT_STRATEGY !== "auth0" && (
+                  <Button onClick={this.handleClick} variant="outlined">
+                    Change password
+                  </Button>
+                )}
               </div>
             )}
           <div className={css(styles.buttons)}>
@@ -501,9 +507,10 @@ const mutations = {
   })
 };
 
-export default withRouter(
-  loadData({
-    queries,
-    mutations
-  })(UserEdit)
-);
+const UserEdit = compose(
+  withMuiTheme,
+  withRouter,
+  loadData({ queries, mutations })
+)(UserEditBase);
+
+export default UserEdit;

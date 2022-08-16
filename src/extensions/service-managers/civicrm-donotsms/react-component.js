@@ -15,7 +15,6 @@ export class OrgConfig extends React.Component {
   }
 
   render() {
-
     const formSchema = yup.object({
       savedText: yup
         .string()
@@ -65,7 +64,6 @@ export class CampaignConfig extends React.Component {
   }
 
   render() {
-
     const foo =
       this.props.serviceManagerInfo &&
       this.props.serviceManagerInfo.data &&
