@@ -63,25 +63,23 @@ export async function available(organizationId) {
 // What happens when a texter saves the answer that triggers the action
 // This is presumably the meat of the action
 export async function processAction({
-  interactionStep,
+  actionObject,
   campaignContactId,
   contact
 }) {
+  console.log("civicrm-addtogroup");
   // This is a meta action that updates a variable in the contact record itself.
   // Generally, you want to send action data to the outside world, so you
   // might want the request library loaded above
 
   const civiContactId = contact.external_id;
-  const destinationGroupId = JSON.parse(interactionStep.answer_actions_data)
-    .value;
+  const destinationGroupId = JSON.parse(actionObject.answer_actions_data).value;
 
   await addContactToGroup(civiContactId, destinationGroupId);
 
   const customFields = JSON.parse(contact.custom_fields || "{}");
-  customFields.processed_test_action = (interactionStep || {}).answer_actions;
-  customFields.test_action_details = (
-    interactionStep || {}
-  ).answer_actions_data;
+  customFields.processed_test_action = (actionObject || {}).answer_actions;
+  customFields.test_action_details = (actionObject || {}).answer_actions_data;
 
   await r
     .knex("campaign_contact")
