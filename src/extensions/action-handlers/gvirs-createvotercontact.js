@@ -55,19 +55,14 @@ export async function available(organization) {
 
 // What happens when a texter saves the answer that triggers the action
 // This is presumably the meat of the action
-export async function processAction({
-  interactionStep,
-  campaignContactId,
-  contact,
-  organization
-}) {
+export async function processAction({ actionObject, campaignContactId, contact, organization }) {
   // This is a meta action that updates a variable in the contact record itself.
   // Generally, you want to send action data to the outside world, so you
   // might want the request library loaded above
 
   const gvirsVoterId = contact.external_id;
   const customFields = JSON.parse(contact.custom_fields || "{}");
-  const destinationInteraction = JSON.parse(interactionStep.answer_actions_data)
+  const destinationInteraction = JSON.parse(actionObject.answer_actions_data)
     .value;
 
   const destinationInteractionParsed = JSON.parse(destinationInteraction);
@@ -91,10 +86,8 @@ export async function processAction({
     gvirsFollowup
   );
 
-  customFields.processed_test_action = (interactionStep || {}).answer_actions;
-  customFields.test_action_details = (
-    interactionStep || {}
-  ).answer_actions_data;
+  customFields.processed_test_action = (actionObject || {}).answer_actions;
+  customFields.test_action_details = (actionObject || {}).answer_actions_data;
 
   await r
     .knex("campaign_contact")

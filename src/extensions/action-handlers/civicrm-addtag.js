@@ -67,7 +67,6 @@ export async function processAction({
   // This is a meta action that updates a variable in the contact record itself.
   // Generally, you want to send action data to the outside world, so you
   // might want the request library loaded above
-  console.log("civicrm-addtag");
   const civiContactId = contact.external_id;
   const destinationTagId = JSON.parse(actionObject.answer_actions_data).value;
 

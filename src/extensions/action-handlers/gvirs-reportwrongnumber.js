@@ -49,7 +49,7 @@ export async function available(organization) {
 // What happens when a texter saves the answer that triggers the action
 // This is presumably the meat of the action
 export async function processAction({
-  interactionStep,
+  actionObject,
   campaignContactId,
   contact,
   organization
@@ -65,9 +65,9 @@ export async function processAction({
   const customFields = JSON.parse(contact.custom_fields || "{}");
   const gvirsPhoneNumberId = customFields.gvirs_phone_number_id;
   await reportWrongNumber(gvirsVoterId, gvirsPhoneNumberId, organization.name);
-  customFields.processed_test_action = (interactionStep || {}).answer_actions;
+  customFields.processed_test_action = (actionObject || {}).answer_actions;
   customFields.test_action_details = (
-    interactionStep || {}
+    actionObject || {}
   ).answer_actions_data;
 
   await r

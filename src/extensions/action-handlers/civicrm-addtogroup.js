@@ -67,7 +67,6 @@ export async function processAction({
   campaignContactId,
   contact
 }) {
-  console.log("civicrm-addtogroup");
   // This is a meta action that updates a variable in the contact record itself.
   // Generally, you want to send action data to the outside world, so you
   // might want the request library loaded above
