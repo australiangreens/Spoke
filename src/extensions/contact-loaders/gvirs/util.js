@@ -200,7 +200,6 @@ export async function searchSegments(query, organizationName) {
       { search_tree: segmentSearchTree },
       {
         select_fields: ["id", "name", "num_voters"],
-        limit: 500
       }
     );
 
