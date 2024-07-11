@@ -2,17 +2,18 @@ ARG BUILDER_IMAGE=node:20.11.1
 ARG RUNTIME_IMAGE=node:20.11.1-alpine
 ARG PHONE_NUMBER_COUNTRY=US
 
-FROM ${BUILDER_IMAGE} as builder
+FROM ${BUILDER_IMAGE} AS builder
 
 ENV NODE_ENV=production \
     OUTPUT_DIR=./build \
     ASSETS_DIR=./build/client/assets \
     ASSETS_MAP_FILE=assets.json \
-    PHONE_NUMBER_COUNTRY=${PHONE_NUMBER_COUNTRY}
+    PHONE_NUMBER_COUNTRY=US
 
 COPY . /spoke
 WORKDIR /spoke
 RUN yarn install --ignore-scripts --non-interactive --frozen-lockfile && \
+    yarn add -D webpack-cli && \
     yarn run prod-build && \
     rm -rf node_modules && \
     yarn install --production --ignore-scripts
