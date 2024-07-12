@@ -189,7 +189,7 @@ export class AdminConfig extends React.Component {
         </p>
         <p>
           The second is optional text that you can display to Spoke volunteers
-          working on this campaign. It&quot's a useful way of providing
+          working on this campaign. It&quot;'s a useful way of providing
           reminders about campaign messages, and general tips about how to
           engage people effectively in conversation.
         </p>
