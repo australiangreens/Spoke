@@ -250,7 +250,7 @@ export async function addPendingNote(contactId) {
     },
     "create",
     { method: "post" }
-  };
+  );
 
   const res = await fetchfromAPI(
     config,
@@ -265,7 +265,7 @@ export async function addPendingNote(contactId) {
     },
     "create",
     { method: "post" }
-  };
+  );
 
   return res;
 }
