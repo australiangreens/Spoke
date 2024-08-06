@@ -240,7 +240,7 @@ export async function addContactToTag(contactId, tagId) {
 export async function addPendingNote(contactId) {
   const config = getCivi();
 
-  const res = await fetchfromAPI(
+  const pendingNoteRes = await fetchfromAPI(
     config,
     "CustomValue",
     {
@@ -252,7 +252,7 @@ export async function addPendingNote(contactId) {
     { method: "post" }
   );
 
-  const res = await fetchfromAPI(
+  const activityRes = await fetchfromAPI(
     config,
     "Activity",
     {
@@ -267,7 +267,7 @@ export async function addPendingNote(contactId) {
     { method: "post" }
   );
 
-  return res;
+  return activityRes;
 }
 
 /**
