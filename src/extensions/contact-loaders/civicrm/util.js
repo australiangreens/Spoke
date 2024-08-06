@@ -237,6 +237,39 @@ export async function addContactToTag(contactId, tagId) {
   return res;
 }
 
+export async function addPendingNote(contactId) {
+  const config = getCivi();
+
+  const res = await fetchfromAPI(
+    config,
+    "CustomValue",
+    {
+      entity_id: contactId,
+      entity_table: "civicrm_contact",
+      custom_247: "Contacted via Spoke text message"
+    },
+    "create",
+    { method: "post" }
+  };
+
+  const res = await fetchfromAPI(
+    config,
+    "Activity",
+    {
+      source_contact_id: "spoke cid",
+      subject: note,
+      target_id: contactId,
+      priority_id: "Normal",
+      status_id: "Completed",
+      activity_date_time: moment().format('YYYY-MM-DD HH:mm:ss')
+    },
+    "create",
+    { method: "post" }
+  };
+
+  return res;
+}
+
 /**
  * @returns {Promise<{ name: string; id: number }[]>}
  */
