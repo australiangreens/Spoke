@@ -7,7 +7,7 @@ import { getConfig } from "../../server/api/lib/config";
 import {
   ENVIRONMENTAL_VARIABLES_MANDATORY,
   CIVICRM_CONTACT_LOADER,
-  CIVICRM_ACTION_HANDLER_ADDTAG
+  CIVICRM_ACTION_HANDLER_ADDPENDINGNOTE
 } from "../contact-loaders/civicrm/const";
 
 export const name = CIVICRM_ACTION_HANDLER_ADDPENDINGNOTE;
