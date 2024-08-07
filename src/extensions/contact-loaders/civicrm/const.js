@@ -48,6 +48,7 @@ export const ENVIRONMENTAL_VARIABLES_OPTIONAL = [
 
 export const CIVICRM_CONTACT_LOADER = "civicrm";
 export const CIVICRM_ACTION_HANDLER_ADDGROUP = "civicrm-addtogroup";
+export const CIVICRM_ACTION_HANDLER_ADDPENDINGNOTE = "civicrm-addpendingnote";
 export const CIVICRM_ACTION_HANDLER_ADDTAG = "civicrm-addtag";
 export const CIVICRM_ACTION_HANDLER_REGISTEREVENT = "civicrm-registerevent";
 export const CIVICRM_ACTION_HANDLER_SENDEMAIL = "civicrm-sendemail";
