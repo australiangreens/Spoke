@@ -6,7 +6,7 @@
 // Caching for action handlers and contact loaders should be a length of
 // a hour.
 
-export const CIVICRM_CACHE_SECONDS = 3600;
+export const CIVICRM_CACHE_SECONDS = 5;
 
 // This sets the 'page' size (i.e, the number of records retrieved at a
 // particular time) when retrieved data from CiviCRM.
