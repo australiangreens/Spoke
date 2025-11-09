@@ -10,7 +10,7 @@ ENV NODE_ENV=production \
     OUTPUT_DIR=./build \
     ASSETS_DIR=./build/client/assets \
     ASSETS_MAP_FILE=assets.json \
-    PHONE_NUMBER_COUNTRY=${PHONE_NUMBER_COUNTRY}
+    PHONE_NUMBER_COUNTRY=${PHONE_NUMBER_COUNTRY} \
     NODE_OPTIONS="--dns-result-order=ipv4first"
 
 COPY . /spoke
