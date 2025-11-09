@@ -10,12 +10,12 @@ ENV NODE_ENV=production \
     OUTPUT_DIR=./build \
     ASSETS_DIR=./build/client/assets \
     ASSETS_MAP_FILE=assets.json \
-    PHONE_NUMBER_COUNTRY=${PHONE_NUMBER_COUNTRY} \
-    NODE_OPTIONS="--dns-result-order=ipv4first"
+    PHONE_NUMBER_COUNTRY=${PHONE_NUMBER_COUNTRY}
 
 COPY . /spoke
 WORKDIR /spoke
-RUN yarn install --ignore-scripts --non-interactive --frozen-lockfile && \
+RUN yarn config set network-timeout 600000 -g && \
+    yarn install --ignore-scripts --non-interactive --frozen-lockfile && \
     yarn run prod-build && \
     rm -rf node_modules && \
     yarn install --production --ignore-scripts
