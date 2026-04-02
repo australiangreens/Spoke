@@ -27,6 +27,9 @@ export const CIVICRM_INTEGRATION_GROUPSEARCH_ENDPOINT =
 
 export const CIVICRM_MINQUERY_SIZE = 3;
 
+/** Delay after typing before calling the group search API (campaign contact loader). */
+export const CIVICRM_GROUP_SEARCH_DEBOUNCE_MS = 500;
+
 // Some enviornmental variables are mandatory for the CiviCRM loaders
 // and action handlers; others are optional.
 

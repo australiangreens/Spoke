@@ -1,11 +1,8 @@
-/* eslint-disable no-unused-vars */
 import DeleteIcon from "@material-ui/icons/Delete";
 import Avatar from "@material-ui/core/Avatar";
 import FolderIcon from "@material-ui/icons/Folder";
 import TextField from "@material-ui/core/TextField";
 import Autocomplete from "@material-ui/lab/Autocomplete";
-import LoadingIndicator from "../../../components/LoadingIndicator";
-import _ from "lodash";
 import type from "prop-types";
 import React from "react";
 import * as yup from "yup";
@@ -22,57 +19,96 @@ import GSSubmitButton from "../../../components/forms/GSSubmitButton";
 import fetch from "node-fetch";
 import {
   CIVICRM_INTEGRATION_GROUPSEARCH_ENDPOINT,
-  CIVICRM_MINQUERY_SIZE
+  CIVICRM_MINQUERY_SIZE,
+  CIVICRM_GROUP_SEARCH_DEBOUNCE_MS
 } from "./const";
+import {
+  CIVICRM_GROUP_SEARCH_LOADING_TEXT,
+  civicrmGroupSearchNoOptionsText
+} from "./groupSearchUiStrings";
 import CircularProgress from "@material-ui/core/CircularProgress";
 import { log } from "../../../lib/log";
 
 export default function CiviCRMLoaderField(props) {
   const [open, setOpen] = React.useState(false);
   const [options, setOptions] = React.useState([]);
-  const [loading, setLoading] = React.useState(false);
+  const [fetchLoading, setFetchLoading] = React.useState(false);
   const [selectedGroups, setSelectedGroups] = React.useState([]);
   const [error, setError] = React.useState("");
 
   // See https://v4.mui.com/components/autocomplete/#controllable-states
   const [value, setValue] = React.useState(null);
   const [inputValue, setInputValue] = React.useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = React.useState("");
 
   React.useEffect(() => {
-    setLoading(true);
+    if (inputValue.length < CIVICRM_MINQUERY_SIZE) {
+      setDebouncedSearchQuery("");
+      return undefined;
+    }
+    const timeoutId = setTimeout(() => {
+      setDebouncedSearchQuery(inputValue);
+    }, CIVICRM_GROUP_SEARCH_DEBOUNCE_MS);
+    return () => clearTimeout(timeoutId);
+  }, [inputValue]);
+
+  const awaitingDebounce =
+    inputValue.length >= CIVICRM_MINQUERY_SIZE &&
+    inputValue !== debouncedSearchQuery;
+  const loading = awaitingDebounce || fetchLoading;
+
+  React.useEffect(() => {
     let active = true;
 
-    if (inputValue.length >= CIVICRM_MINQUERY_SIZE) {
-      (async () => {
-        try {
-          const response = await fetch(
-            `${CIVICRM_INTEGRATION_GROUPSEARCH_ENDPOINT}?query=${inputValue}`
-          );
-          const json = await response.json();
-
-          if (active) {
-            setOptions(json.groups);
-          }
-          setError("");
-        } catch (err) {
-          setError(err.message);
-          log.error(error);
-        }
-      })();
+    if (debouncedSearchQuery.length < CIVICRM_MINQUERY_SIZE) {
+      setOptions([]);
+      setFetchLoading(false);
+      setError("");
+      return () => {
+        active = false;
+      };
     }
 
-    setLoading(false);
+    setFetchLoading(true);
+    setError("");
+
+    (async () => {
+      try {
+        const response = await fetch(
+          `${CIVICRM_INTEGRATION_GROUPSEARCH_ENDPOINT}?query=${encodeURIComponent(
+            debouncedSearchQuery
+          )}`
+        );
+        const json = await response.json();
+
+        if (active) {
+          setOptions(Array.isArray(json.groups) ? json.groups : []);
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message);
+          setOptions([]);
+          log.error(err);
+        }
+      } finally {
+        if (active) {
+          setFetchLoading(false);
+        }
+      }
+    })();
 
     return () => {
       active = false;
     };
-  }, [inputValue]);
+  }, [debouncedSearchQuery]);
 
-  React.useEffect(() => {
-    if (!open) {
-      setOptions([]);
-    }
-  }, [open]);
+  const noOptionsText = civicrmGroupSearchNoOptionsText({
+    inputLength: inputValue.length,
+    minQuerySize: CIVICRM_MINQUERY_SIZE,
+    loading,
+    hasError: error.length > 0,
+    hasOptions: options.length > 0
+  });
 
   const removeId = id => {
     setSelectedGroups(selectedGroups.filter(item => item.id !== id));
@@ -98,8 +134,11 @@ export default function CiviCRMLoaderField(props) {
               theValue ? option.title === theValue.title : false
             }
             getOptionLabel={option => (option ? option.title : "")}
+            filterOptions={opts => opts}
             options={options}
             loading={loading}
+            loadingText={CIVICRM_GROUP_SEARCH_LOADING_TEXT}
+            noOptionsText={noOptionsText}
             disableClearable
             onInputChange={(_event, text) => {
               setInputValue(text);
@@ -141,7 +180,6 @@ export default function CiviCRMLoaderField(props) {
               />
             )}
           />
-          {loading && <LoadingIndicator />}
         </div>
         <h4>Selected Groups</h4>
         <div style={{ display: "flex" }}>
