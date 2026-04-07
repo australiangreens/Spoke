@@ -30,6 +30,13 @@ export const CIVICRM_MINQUERY_SIZE = 3;
 /** Delay after typing before calling the group search API (campaign contact loader). */
 export const CIVICRM_GROUP_SEARCH_DEBOUNCE_MS = 500;
 
+/**
+ * Config key: base URL for CiviCRM API v4 REST (no trailing slash), e.g.
+ * https://example.org/civicrm/ajax/api4
+ * When set (non-empty), group search uses Api4 Group.get instead of v3 rest.php.
+ */
+export const CIVICRM_API4_URL = "CIVICRM_API4_URL";
+
 // Some enviornmental variables are mandatory for the CiviCRM loaders
 // and action handlers; others are optional.
 
@@ -43,7 +50,8 @@ export const ENVIRONMENTAL_VARIABLES_OPTIONAL = [
   "CIVICRM_CUSTOM_CONTACT_ACTION",
   "CIVICRM_CUSTOM_DATA",
   "CIVICRM_MESSAGE_IDS",
-  "CIVICRM_CACHE_LENGTHS"
+  "CIVICRM_CACHE_LENGTHS",
+  CIVICRM_API4_URL
 ];
 
 // These are the 'names' of the CIVICRM contact loader and action

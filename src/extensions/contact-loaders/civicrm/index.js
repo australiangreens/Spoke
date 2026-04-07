@@ -10,7 +10,8 @@ import {
   CIVICRM_MINQUERY_SIZE,
   ENVIRONMENTAL_VARIABLES_MANDATORY,
   ENVIRONMENTAL_VARIABLES_OPTIONAL,
-  CIVICRM_CONTACT_LOADER
+  CIVICRM_CONTACT_LOADER,
+  CIVICRM_API4_URL
 } from "./const";
 import { getCacheLength } from "./getcachelength";
 import { getFormattedPhoneNumber } from "../../../lib";
@@ -31,7 +32,9 @@ export function serverAdministratorInstructions() {
     ],
     description: "Allows you to pull contacts directly from CiviCRM",
     setupInstructions:
-      "Configure the mandatory environment variables to connect to a CiviCRM instance"
+      `Configure the mandatory environment variables to connect to a CiviCRM instance. ` +
+      `Optional ${CIVICRM_API4_URL} (e.g. https://your-site.org/civicrm/ajax/api4, no trailing slash) ` +
+      `enables API v4 for group search (CiviCRM 5.36+ with AuthX; use API key auth).`
   };
 }
 

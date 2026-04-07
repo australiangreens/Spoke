@@ -1,8 +1,9 @@
 /* eslint-disable no-param-reassign */
-import { getConfig } from "../../../server/api/lib/config";
-import fetch from "node-fetch";
 import moment from "moment-timezone";
+import fetch from "node-fetch";
+import { getConfig } from "../../../server/api/lib/config";
 import {
+  CIVICRM_API4_URL,
   CIVICRM_PAGINATE_SIZE,
   DEFAULT_CONTACT_ENTITY_ACTION_NAME
 } from "./const";
@@ -13,7 +14,7 @@ export function getIntegerArray(envVariable) {
     const csvParts = envVariable.split(",");
     for (const csvPart of csvParts) {
       const csvPartAsInt = parseInt(csvPart, 10);
-      if (isNaN(csvPartAsInt)) {
+      if (Number.isNaN(csvPartAsInt)) {
         return [];
       }
       retValue.push(csvPartAsInt);
@@ -90,6 +91,71 @@ async function fetchfromAPI(
   }
 }
 
+/**
+ * Escape a user string for safe use inside Civi LIKE patterns (same approach as
+ * listmanager-backend escapeString).
+ * @param {string} strIn
+ * @returns {string}
+ */
+export function escapeStringForCiviLike(strIn) {
+  return JSON.stringify(strIn).slice(1, -1);
+}
+
+/**
+ * Key-based Api4 calls use POST + application/x-www-form-urlencoded with
+ * params, key, and api_key (same pattern as listmanager-backend civiApiV4).
+ *
+ * @see https://docs.civicrm.org/dev/en/latest/api/v4/rest/
+ * @param {string} baseUrl e.g. https://example.org/civicrm/ajax/api4 (no trailing slash)
+ * @param {string} entity
+ * @param {string} action
+ * @param {object} params Api4 params (select, where, …)
+ * @returns {Promise<object[]|false>} values array, or false on HTTP/parse/API error
+ */
+async function fetchfromAPI4(baseUrl, entity, action, params) {
+  const apiKey = getConfig("CIVICRM_API_KEY");
+  const siteKey = getConfig("CIVICRM_SITE_KEY");
+  const root = String(baseUrl).replace(/\/$/, "");
+  const url = `${root}/${entity}/${action}`;
+  const queryParams = new URLSearchParams({
+    params: JSON.stringify(params),
+    key: siteKey,
+    api_key: apiKey
+  });
+
+  try {
+    const result = await fetch(url, {
+      method: "POST",
+      headers: {
+        Accept: "application/json",
+        "Content-Type": "application/x-www-form-urlencoded",
+        "X-Requested-With": "XMLHttpRequest"
+      },
+      body: queryParams.toString()
+    });
+    const text = await result.text();
+    let json;
+    try {
+      json = JSON.parse(text);
+    } catch (_e) {
+      return false;
+    }
+    if (!result.ok) {
+      return false;
+    }
+    if (json.error_message) {
+      return false;
+    }
+    const {values} = json;
+    if (!Array.isArray(values)) {
+      return [];
+    }
+    return values;
+  } catch (_e) {
+    return false;
+  }
+}
+
 export function getCivi() {
   const civicrm = new URL(getConfig("CIVICRM_API_URL"));
 
@@ -104,13 +170,14 @@ export function getCivi() {
   return config;
 }
 
-/**
- * @param {string} query
- * @returns {Promise<{ title: string; count: number; id: number }[]>}
- */
-export async function searchGroups(query, getcountVal = 0) {
-  const config = getCivi();
 
+function shouldUseCiviApi4() {
+  const url = getConfig(CIVICRM_API4_URL);
+  return Boolean(url && String(url).trim());
+}
+
+async function searchGroupsApi3(query, getcountVal) {
+  const config = getCivi();
   const key = "api.GroupContact.getcount";
 
   const res = await fetchfromAPI(config, "group", {
@@ -134,6 +201,47 @@ export async function searchGroups(query, getcountVal = 0) {
     }));
   }
   return [];
+}
+
+async function searchGroupsApi4(query, getcountVal) {
+  const baseUrl = getConfig(CIVICRM_API4_URL);
+  const escaped = escapeStringForCiviLike(query);
+  const likePattern = `%${escaped}%`;
+  const select = getcountVal
+    ? ["id", "title", "contact_count"]
+    : ["id", "title"];
+  const params = {
+    select,
+    where: [["title", "LIKE", likePattern]]
+  };
+  const res = await fetchfromAPI4(baseUrl, "Group", "get", params);
+  if (res === false) {
+    return [];
+  }
+  if (getcountVal) {
+    return res.map(row => ({
+      title: `${row.title} (${row.contact_count})`,
+      count: row.contact_count,
+      id: Number(row.id)
+    }));
+  }
+  return res.map(row => ({
+    title: `${row.title}`,
+    id: Number(row.id)
+  }));
+}
+
+
+
+/**
+ * @param {string} query
+ * @returns {Promise<{ title: string; count?: number; id: number }[]>}
+ */
+export async function searchGroups(query, getcountVal = 0) {
+  if (shouldUseCiviApi4()) {
+    return searchGroupsApi4(query, getcountVal);
+  }
+  return searchGroupsApi3(query, getcountVal);
 }
 
 export async function getGroupMembers(groupId, callback) {
