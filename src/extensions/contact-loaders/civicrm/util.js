@@ -183,7 +183,7 @@ async function searchGroupsApi3(query, getcountVal) {
   const res = await fetchfromAPI(config, "group", {
     sequential: 1,
     return: ["id", "title"],
-    title: { LIKE: `%${query}%` },
+    title: { LIKE: `${query}%` },
     [key]: getcountVal,
     options: { limit: 0 }
   });
@@ -206,7 +206,7 @@ async function searchGroupsApi3(query, getcountVal) {
 async function searchGroupsApi4(query, getcountVal) {
   const baseUrl = getConfig(CIVICRM_API4_URL);
   const escaped = escapeStringForCiviLike(query);
-  const likePattern = `%${escaped}%`;
+  const likePattern = `${escaped}%`;
   const select = getcountVal
     ? ["id", "title", "contact_count"]
     : ["id", "title"];
