@@ -161,7 +161,7 @@ export default function CiviCRMLoaderField(props) {
             renderInput={params => (
               <TextField
                 {...params}
-                label="CiviCRM Groups"
+                label="Search by group name (starts with)"
                 variant="outlined"
                 error={error.length > 0}
                 helperText={error}
@@ -276,8 +276,8 @@ export class CampaignContactsForm extends React.Component {
 
     let subtitle = (
       <span>
-        Please select one or more CiviCRM groups that contain contact
-        information you wish to load.
+        Please select one or more CiviCRM groups that contain contacts
+        you wish to load.
       </span>
     );
 
