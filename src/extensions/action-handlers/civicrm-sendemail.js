@@ -51,7 +51,7 @@ export function clientChoiceDataCacheKey(organization, user) {
 // Besides this returning true, "civicrm-sendemail" will also need to be added to
 // process.env.ACTION_HANDLERS
 export async function available(organizationId) {
-  const contactLoadersConfig = getConfig("CONTACT_LOADERS").split(",");
+  const contactLoadersConfig = (getConfig("CONTACT_LOADERS") || "").split(",");
   const hasMessageIds = hasConfig("CIVICRM_MESSAGE_IDS");
   if (
     contactLoadersConfig.indexOf(CIVICRM_CONTACT_LOADER) !== -1 &&

@@ -79,6 +79,9 @@ export default function CiviCRMLoaderField(props) {
             debouncedSearchQuery
           )}`
         );
+        if (!response.ok) {
+          throw new Error(`Search request failed (HTTP ${response.status})`);
+        }
         const json = await response.json();
 
         if (active) {

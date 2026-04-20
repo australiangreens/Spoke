@@ -2,6 +2,7 @@
 import moment from "moment-timezone";
 import fetch from "node-fetch";
 import { getConfig } from "../../../server/api/lib/config";
+import { log } from "../../../lib/log";
 import {
   CIVICRM_API4_URL,
   CIVICRM_PAGINATE_SIZE,
@@ -87,7 +88,8 @@ async function fetchfromAPI(
     const json = await result.json();
     return json.is_error ? false : json.values;
   } catch (error) {
-    return error;
+    log.error(`CiviCRM API3 fetch error for ${entity}.${entityAction}:`, error);
+    return false;
   }
 }
 
@@ -138,12 +140,15 @@ async function fetchfromAPI4(baseUrl, entity, action, params) {
     try {
       json = JSON.parse(text);
     } catch (_e) {
+      log.error(`CiviCRM API4 non-JSON response from ${url}:`, text.substring(0, 200));
       return false;
     }
     if (!result.ok) {
+      log.error(`CiviCRM API4 HTTP ${result.status} from ${url}`);
       return false;
     }
     if (json.error_message) {
+      log.error(`CiviCRM API4 error from ${url}: ${json.error_message}`);
       return false;
     }
     const {values} = json;
@@ -152,6 +157,7 @@ async function fetchfromAPI4(baseUrl, entity, action, params) {
     }
     return values;
   } catch (_e) {
+    log.error(`CiviCRM API4 fetch exception for ${url}:`, _e);
     return false;
   }
 }
@@ -187,7 +193,7 @@ async function searchGroupsApi3(query, getcountVal) {
     [key]: getcountVal,
     options: { limit: 0 }
   });
-  if (res) {
+  if (Array.isArray(res)) {
     if (getcountVal) {
       return res.map(group => ({
         title: `${group.title} (${group[key]})`,
@@ -356,7 +362,7 @@ export async function searchTags() {
     return: ["id", "name"],
     options: { limit: 0 }
   });
-  if (res) {
+  if (Array.isArray(res)) {
     return res;
   }
   return [];
@@ -379,7 +385,7 @@ export async function searchEvents() {
     },
     options: { limit: 0 }
   });
-  if (res) {
+  if (Array.isArray(res)) {
     return res;
   }
   return [];
@@ -412,7 +418,7 @@ export async function searchMessageTemplates() {
     id: { IN: getIntegerArray(getConfig("CIVICRM_MESSAGE_IDS")) },
     options: { limit: 0 }
   });
-  if (res) {
+  if (Array.isArray(res)) {
     return res;
   }
   return [];

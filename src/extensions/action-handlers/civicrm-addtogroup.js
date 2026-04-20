@@ -46,7 +46,7 @@ export function clientChoiceDataCacheKey(organization, user) {
 // Besides this returning true, "civicrm-addtogroup" will also need to be added to
 // process.env.ACTION_HANDLERS
 export async function available(organizationId) {
-  const contactLoadersConfig = getConfig("CONTACT_LOADERS").split(",");
+  const contactLoadersConfig = (getConfig("CONTACT_LOADERS") || "").split(",");
   if (contactLoadersConfig.indexOf(CIVICRM_CONTACT_LOADER) !== -1) {
     const hasLoader = await loaderAvailable(organizationId, 0);
     return {
