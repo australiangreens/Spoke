@@ -86,7 +86,14 @@ async function fetchfromAPI(
   try {
     const result = await fetch(url, fetchOptions);
     const json = await result.json();
-    return json.is_error ? false : json.values;
+    if (json.is_error) {
+      log.error(`CiviCRM API3 error for ${entity}.${entityAction}: ${json.error_message || json.error}`);
+      return false;
+    }
+    if (!Array.isArray(json.values)) {
+      log.error(`CiviCRM API3 unexpected response shape for ${entity}.${entityAction}: values is ${typeof json.values}`, JSON.stringify(json).substring(0, 500));
+    }
+    return json.values;
   } catch (error) {
     log.error(`CiviCRM API3 fetch error for ${entity}.${entityAction}:`, error);
     return false;
@@ -153,6 +160,7 @@ async function fetchfromAPI4(baseUrl, entity, action, params) {
     }
     const {values} = json;
     if (!Array.isArray(values)) {
+      log.error(`CiviCRM API4 unexpected response shape from ${url}: values is ${typeof values}`, JSON.stringify(json).substring(0, 500));
       return [];
     }
     return values;
@@ -287,9 +295,10 @@ export async function getGroupMembers(groupId, callback) {
       "api.Phone.get": {
         contact_id: "$value.id",
         phone_type_id: "Mobile",
+        location_type_id: { "!=": "Previous" },
 
         return: ["id", "phone_numeric"],
-        options: { limit: 1 }
+        options: { limit: 1, sort: "id DESC" }
       },
       // Closest thing to docs for this: https://lab.civicrm.org/dev/core/blob/d434a5cfb2dc3c248ac3c0d8570bd8e9d828f6ad/api/v3/Contact.php#L403
       group: groupId

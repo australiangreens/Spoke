@@ -70,7 +70,12 @@ export function addServerEndpoints(expressApp) {
     if (query.length < CIVICRM_MINQUERY_SIZE) return res.json({ groups: [] }); // ignore dumb queries
 
     searchGroups(query || "", 1)
-      .then(groups => res.json({ groups }))
+      .then(groups => {
+        if (groups.length === 0) {
+          log.info(`CiviCRM group search: query="${query}" returned 0 results`);
+        }
+        res.json({ groups });
+      })
       .catch(error => {
         log.error(error);
         res.json({ groups: [], error });
