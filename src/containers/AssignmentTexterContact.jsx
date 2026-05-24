@@ -659,7 +659,7 @@ const mutations = {
       }
     `,
     variables: {
-      assignmentId
+      assignmentId: parseInt(assignmentId, 10)
     }
   })
 };
